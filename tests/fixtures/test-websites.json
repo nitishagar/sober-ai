@@ -1,0 +1,45 @@
+{
+  "ssrExcellence": [
+    {
+      "url": "https://vercel.com",
+      "name": "Vercel",
+      "framework": "Next.js",
+      "expectedSSRScore": ">90",
+      "notes": "Cutting-edge Next.js implementation with excellent SSR"
+    },
+    {
+      "url": "https://stripe.com",
+      "name": "Stripe",
+      "framework": "Next.js",
+      "expectedSSRScore": ">85",
+      "notes": "Production Next.js with strong SSR implementation"
+    }
+  ],
+  "schemaExcellence": [
+    {
+      "url": "https://shopify.com",
+      "name": "Shopify",
+      "expectedSchemas": ["Organization", "Product", "SoftwareApplication"],
+      "expectedSchemaScore": ">80",
+      "notes": "E-commerce with comprehensive structured data"
+    }
+  ],
+  "pureSPA": [
+    {
+      "url": "https://youtube.com",
+      "name": "YouTube",
+      "framework": "Angular/React",
+      "expectedSSRScore": "<50",
+      "notes": "Heavy client-side rendering, expected to score poorly on SSR"
+    }
+  ],
+  "mixed": [
+    {
+      "url": "https://github.com",
+      "name": "GitHub",
+      "framework": "Rails + Progressive Enhancement",
+      "expectedSSRScore": "70-85",
+      "notes": "Progressive enhancement approach, partial SSR"
+    }
+  ]
+}

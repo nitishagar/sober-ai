@@ -1,0 +1,31 @@
+version: "1.0"
+
+# Model selection
+models:
+  default: qwen3-4b
+  fallback: null  # No fallback in Phase 1
+
+  profiles:
+    qwen3-4b:
+      provider: ollama
+      endpoint: http://localhost:11434  # Will be overridden by env var
+      model: qwen3:4b
+      context_window: 128000
+      max_tokens: 2048
+      temperature: 0.3
+      top_p: 0.9
+      memory_requirement: "2.5GB"
+      concurrent_capacity: 3-5
+      avg_response_time: "10-15s"
+      recommended: true
+      notes: |
+        Qwen3 4B model. Efficient and fast with good quality.
+        RAM requirement: 2.5GB. Good for website analysis and recommendations.
+
+# Performance settings
+performance:
+  timeout: 60000              # 60 seconds max per audit
+  target_completion: 15000    # 15 seconds target
+  concurrent_audits: 1        # Phase 1: single audit at a time
+  retry_attempts: 2
+  cache_ttl: 0                # No caching in Phase 1

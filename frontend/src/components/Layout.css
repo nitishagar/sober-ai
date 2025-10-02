@@ -1,0 +1,74 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: 32px;
+}
+
+.logo {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.nav {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+}
+
+.nav a {
+  color: var(--text-secondary);
+  font-size: 13px;
+  transition: color 0.15s;
+}
+
+.nav a:hover {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-email {
+  font-size: 12px;
+}
+
+.plan-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 2px 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  color: var(--text-secondary);
+}
+
+.main-content {
+  flex: 1;
+  padding: 24px 16px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}

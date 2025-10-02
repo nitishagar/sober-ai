@@ -1,0 +1,209 @@
+.report-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1200px;
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.report-header h1 {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.overall-score-large {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.overall-score-large .score-value {
+  font-family: var(--font-mono);
+  font-size: 48px;
+  font-weight: 300;
+}
+
+.grade-badge-large {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 4px;
+}
+
+.grade-badge-large.grade-a { background: #e6f4ea; color: var(--success); }
+.grade-badge-large.grade-b { background: #fef7e0; color: var(--warning); }
+.grade-badge-large.grade-c { background: #fce8e6; color: var(--error); }
+.grade-badge-large.grade-d { background: #fce8e6; color: var(--error); }
+.grade-badge-large.grade-f { background: #fce8e6; color: var(--error); }
+
+.scores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.score-card {
+  padding: 16px;
+}
+
+.score-label {
+  font-size: 12px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.score-bar-container {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.score-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.score-value-small {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 300;
+}
+
+.recommendations {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.recommendation-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-primary);
+}
+
+details {
+  cursor: pointer;
+}
+
+details summary {
+  padding: 8px 0;
+  color: var(--accent);
+  font-size: 12px;
+}
+
+details summary:hover {
+  text-decoration: underline;
+}
+
+.audit-json {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg-secondary);
+  padding: 16px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin-top: 12px;
+  white-space: pre;
+  line-height: 1.5;
+}
+
+/* JSON Syntax Highlighting */
+.json-key {
+  color: #0451a5;
+  font-weight: 500;
+}
+
+.json-string {
+  color: #0a8045;
+}
+
+.json-number {
+  color: #098658;
+}
+
+.json-boolean {
+  color: #0000ff;
+  font-weight: 600;
+}
+
+.json-null,
+.json-undefined {
+  color: #666;
+  font-style: italic;
+}
+
+/* Recommendations Styling */
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.recommendation-section {
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+}
+
+.recommendation-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.recommendation-summary {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.recommendation-items {
+  list-style: disc;
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+
+.recommendation-items li {
+  font-size: 12px;
+  margin-bottom: 8px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.recommendation-details {
+  margin-top: 12px;
+}
+
+.recommendation-full-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg-secondary);
+  padding: 12px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  margin-top: 8px;
+}

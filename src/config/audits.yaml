@@ -1,0 +1,48 @@
+version: "1.0"
+
+# Enabled audits
+enabled:
+  - ssr-readiness
+  - schema-coverage
+  - semantic-structure
+  - content-extractability
+
+# Weights (must sum to 100) - Phase 1: 4 core audits
+weights:
+  ssr_readiness: 25          # CRITICAL for AI agents
+  schema_coverage: 25        # Schema.org structured data
+  semantic_structure: 25     # HTML5 semantic elements
+  content_extractability: 25 # LLM-optimized content
+  # Phase 2+:
+  # machine_readability: 10  # Future: API accessibility
+  # performance: 5           # Future: load time, Core Web Vitals
+
+# Scoring thresholds
+thresholds:
+  excellent: 90
+  good: 75
+  needs_improvement: 50
+  critical: 25
+
+# Industry detection
+industries:
+  templates:
+    - ecommerce
+    - saas
+    - documentation
+    - news
+    - local-business
+    - general
+
+  auto_detect: true
+  fallback: "general"
+
+# Output configuration
+output:
+  formats:
+    - json
+    - html
+  include_raw_data: false
+  include_llm_reasoning: true
+  include_code_examples: true
+  include_impact_scores: true

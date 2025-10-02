@@ -1,0 +1,82 @@
+# Industry-specific schema requirements
+industries:
+  ecommerce:
+    required:
+      - Product
+      - Offer
+      - Organization
+    recommended:
+      - AggregateRating
+      - Review
+      - BreadcrumbList
+    priority_score: 30
+
+  saas:
+    required:
+      - SoftwareApplication
+      - Organization
+      - FAQPage
+    recommended:
+      - HowTo
+      - Review
+      - AggregateRating
+    priority_score: 25
+
+  documentation:
+    required:
+      - TechArticle
+      - HowTo
+      - Organization
+    recommended:
+      - QAPage
+      - BreadcrumbList
+      - SoftwareSourceCode
+    priority_score: 25
+
+  news:
+    required:
+      - NewsArticle
+      - Organization
+      - Person
+    recommended:
+      - ImageObject
+      - WebSite
+    priority_score: 30
+
+  local-business:
+    required:
+      - LocalBusiness
+      - PostalAddress
+      - OpeningHoursSpecification
+    recommended:
+      - AggregateRating
+      - Review
+      - GeoCoordinates
+    priority_score: 30
+
+  general:
+    required:
+      - Organization
+      - WebSite
+    recommended:
+      - BreadcrumbList
+      - WebPage
+    priority_score: 15
+
+# Schema property requirements
+schema_properties:
+  Product:
+    required: [name, image, description, offers]
+    recommended: [brand, aggregateRating, review]
+
+  Organization:
+    required: [name, url]
+    recommended: [logo, sameAs, contactPoint, description]
+
+  Article:
+    required: [headline, author, datePublished]
+    recommended: [dateModified, description, keywords, image]
+
+  LocalBusiness:
+    required: [name, address, telephone]
+    recommended: [openingHoursSpecification, geo, priceRange, aggregateRating]

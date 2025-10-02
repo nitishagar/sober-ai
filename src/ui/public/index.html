@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoberAI Optimizer - AI Agent Website Auditor</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🤖 SoberAI Optimizer</h1>
+            <p class="tagline">Lighthouse for the AI Age - Optimize your website for AI agents</p>
+        </header>
+
+        <main class="main">
+            <section class="audit-form">
+                <h2>Audit Your Website</h2>
+                <form id="auditForm">
+                    <div class="form-group">
+                        <label for="url">Website URL</label>
+                        <input
+                            type="url"
+                            id="url"
+                            name="url"
+                            placeholder="https://example.com"
+                            required
+                            pattern="https?://.+"
+                        >
+                    </div>
+                    <button type="submit" id="submitBtn" class="btn-primary">
+                        Run AI Agent Audit
+                    </button>
+                </form>
+
+                <div id="progress" class="progress hidden">
+                    <div class="spinner"></div>
+                    <p>Analyzing your website for AI agent compatibility...</p>
+                    <p class="progress-detail">This typically takes 15-20 seconds</p>
+                </div>
+
+                <div id="error" class="error hidden"></div>
+            </section>
+
+            <section id="results" class="results hidden">
+                <h2>Audit Results</h2>
+
+                <div class="score-card">
+                    <div class="overall-score">
+                        <div class="score-circle" id="scoreCircle">
+                            <span id="scoreValue">0</span>
+                        </div>
+                        <div class="score-info">
+                            <h3>Overall AI Readiness</h3>
+                            <p id="scoreGrade">Grade: -</p>
+                            <p id="auditedUrl" class="audited-url"></p>
+                        </div>
+                    </div>
+
+                    <div class="metadata">
+                        <div class="metadata-item">
+                            <strong>Industry:</strong> <span id="industry">-</span>
+                        </div>
+                        <div class="metadata-item">
+                            <strong>SSR Enabled:</strong> <span id="ssrEnabled">-</span>
+                        </div>
+                        <div class="metadata-item">
+                            <strong>Schemas Found:</strong> <span id="schemaCount">-</span>
+                        </div>
+                        <div class="metadata-item">
+                            <strong>Duration:</strong> <span id="duration">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="audit-categories" id="auditCategories"></div>
+
+                <div class="recommendations" id="recommendations"></div>
+
+                <div class="actions">
+                    <button onclick="window.location.reload()" class="btn-secondary">
+                        Audit Another URL
+                    </button>
+                    <button onclick="downloadReport()" class="btn-secondary">
+                        Download Report (JSON)
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>Built with ❤️ for the AI Age | Phase 1 Beta</p>
+        </footer>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

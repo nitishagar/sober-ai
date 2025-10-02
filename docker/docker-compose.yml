@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Ollama service with Qwen2.5-7B
+  ollama:
+    container_name: sober-ollama
+    image: ollama/ollama:latest
+    platform: linux/arm64  # ARM optimization
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    # Healthcheck removed - curl not available in ollama container
+    # API is accessible on port 11434
+    deploy:
+      resources:
+        limits:
+          memory: 6G  # 5GB model + 1GB overhead
+
+  # Main application
+  app:
+    container_name: sober-app
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    platform: linux/arm64
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../src:/app/src
+    environment:
+      - NODE_ENV=development
+      - OLLAMA_ENDPOINT=http://ollama:11434
+      - PORT=3000
+    depends_on:
+      - ollama
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+volumes:
+  ollama-data:

@@ -1,0 +1,116 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dashboard-header h1 {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  padding: 20px;
+}
+
+.stat-label {
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 300;
+  font-family: var(--font-mono);
+}
+
+.grade-distribution {
+  padding: 20px;
+}
+
+.grades {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.grade-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grade-label {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.grade-count {
+  font-size: 12px;
+}
+
+.recent-reports {
+  padding: 20px;
+}
+
+.reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.report-row:hover {
+  background: var(--bg-secondary);
+  text-decoration: none;
+}
+
+.report-url {
+  color: var(--text-primary);
+}
+
+.report-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.score {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.score-a { background: #e6f4ea; color: var(--success); }
+.score-b { background: #fef7e0; color: var(--warning); }
+.score-c { background: #fce8e6; color: var(--error); }
+.score-d { background: #fce8e6; color: var(--error); }
+.score-f { background: #fce8e6; color: var(--error); }
+
+.report-date {
+  font-size: 11px;
+}
