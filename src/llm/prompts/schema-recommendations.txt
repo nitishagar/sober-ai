@@ -23,11 +23,25 @@ INDUSTRY-SPECIFIC FOCUS:
 - Local Business: LocalBusiness, PostalAddress, OpeningHours
 
 OUTPUT FORMAT:
-Provide a clear, structured response with:
-1. Summary of schema coverage gaps
-2. Priority-ordered list of schemas to implement
-3. Complete JSON-LD code examples for each schema
-4. Property recommendations (required vs. recommended)
-5. Validation and testing guidance
+Return ONLY valid JSON with this exact structure (no Markdown, no commentary):
+{
+  "summary": "<50 word overview of schema coverage>",
+  "references": ["Optional list of docs or tools"],
+  "recommendations": [
+    {
+      "priority": 1,
+      "title": "Recommendation title",
+      "impact": "High|Medium|Low",
+      "effort": "High|Medium|Low",
+      "description": "Implementation guidance with validation tips",
+      "why_it_matters": "Explain how this improves AI understanding",
+      "code_example": "Complete JSON-LD snippet"
+    }
+  ]
+}
 
-Be specific with property names and values. Provide working code that can be copy-pasted.
+Rules:
+- Provide EXACTLY 3 recommendations ordered by priority (1 = highest).
+- Tailor JSON-LD examples to the detected industry and fill with realistic placeholder data.
+- Highlight required vs. recommended properties inside the description.
+- Include validation guidance (Rich Results Test, Schema.org validator) inside the description when applicable.

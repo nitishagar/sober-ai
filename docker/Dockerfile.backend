@@ -1,0 +1,23 @@
+FROM node:18-slim
+
+WORKDIR /app
+
+# Copy root package files (backend is at root level)
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Install Playwright browsers with system dependencies
+RUN npx playwright install --with-deps chromium
+
+# Copy all source code
+COPY src/ ./src/
+COPY backend/ ./backend/
+
+# Generate Prisma client
+RUN npx prisma generate --schema=backend/src/db/schema.prisma
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

@@ -21,11 +21,25 @@ FRAMEWORK-SPECIFIC RECOMMENDATIONS:
 - For existing SSR: Suggest optimization and verification methods
 
 OUTPUT FORMAT:
-Provide a clear, structured response with:
-1. Summary of the SSR readiness issues
-2. Recommended approach (SSR, SSG, or hybrid)
-3. Implementation steps with code examples
-4. Expected impact on AI agent visibility
-5. Estimated effort and complexity
+Return ONLY valid JSON with this exact shape (no Markdown, no commentary):
+{
+  "summary": "<50 word overview of the SSR issues>",
+  "references": ["Optional list of docs or tools"],
+  "recommendations": [
+    {
+      "priority": 1,
+      "title": "Recommendation title",
+      "impact": "High|Medium|Low",
+      "effort": "High|Medium|Low",
+      "description": "Step-by-step implementation guidance",
+      "why_it_matters": "Explain why this helps AI agents",
+      "code_example": "Concrete code snippet or configuration"
+    }
+  ]
+}
 
-Be specific, practical, and actionable. Avoid generic advice.
+Rules:
+- Provide EXACTLY 3 recommendations ordered by priority (1 = highest).
+- Each code example must be valid for the recommended framework.
+- Focus on practical, copy-paste ready solutions.
+- Mention verification steps (e.g., curl, Lighthouse) inside the description when relevant.

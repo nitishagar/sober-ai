@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PhaseIndicator from '../components/PhaseIndicator';
 import './Audit.css';
 
 export default function Audit() {
@@ -8,6 +9,7 @@ export default function Audit() {
   const [error, setError] = useState('');
   const [progress, setProgress] = useState('');
   const [progressPercent, setProgressPercent] = useState(0);
+  const [currentPhase, setCurrentPhase] = useState(0);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -57,6 +59,7 @@ export default function Audit() {
               if (data.status === 'completed') {
                 setProgress(data.message);
                 setProgressPercent(100);
+                setCurrentPhase(4);
 
                 setTimeout(() => {
                   navigate(`/reports/${data.reportId}`);
@@ -65,10 +68,16 @@ export default function Audit() {
               } else if (data.status === 'error') {
                 setError(data.message);
                 setLoading(false);
+                setCurrentPhase(0);
                 return;
               } else if (data.status === 'processing' || data.status === 'started') {
                 setProgress(data.message);
                 setProgressPercent(data.progress || 0);
+
+                // Update current phase from server
+                if (data.phase) {
+                  setCurrentPhase(data.phase);
+                }
               }
             } catch (err) {
               console.error('Failed to parse progress:', err);
@@ -109,18 +118,22 @@ export default function Audit() {
           {error && <div className="error-message">{error}</div>}
 
           {loading && (
-            <div className="progress-container">
-              <div className="progress-bar-container">
-                <div
-                  className="progress-bar"
-                  style={{ width: `${progressPercent}%` }}
-                ></div>
+            <>
+              <PhaseIndicator currentPhase={currentPhase} />
+
+              <div className="progress-container">
+                <div className="progress-bar-container">
+                  <div
+                    className="progress-bar"
+                    style={{ width: `${progressPercent}%` }}
+                  ></div>
+                </div>
+                <div className="progress-info">
+                  <span className="text-secondary">{progress}</span>
+                  <span className="progress-percent">{progressPercent}%</span>
+                </div>
               </div>
-              <div className="progress-info">
-                <span className="text-secondary">{progress}</span>
-                <span className="progress-percent">{progressPercent}%</span>
-              </div>
-            </div>
+            </>
           )}
 
           <button

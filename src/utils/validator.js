@@ -58,8 +58,31 @@ function validateBatchRequest(data) {
   };
 }
 
+function sanitizeForJson(value) {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'number' || typeof value === 'boolean') return value;
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeForJson(item)).join(', ');
+  }
+  if (typeof value === 'object') {
+    return Object.entries(value)
+      .map(([key, val]) => `${key}: ${sanitizeForJson(val)}`)
+      .join(', ');
+  }
+  return String(value);
+}
+
+function ensureArray(value) {
+  if (Array.isArray(value)) return value;
+  if (value === null || value === undefined) return [];
+  return [value];
+}
+
 module.exports = {
   isValidUrl,
   validateAuditRequest,
-  validateBatchRequest
+  validateBatchRequest,
+  sanitizeForJson,
+  ensureArray
 };

@@ -1,17 +1,51 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const yaml = require('js-yaml');
 const logger = require('../utils/logger');
+const { sanitizeForJson, ensureArray } = require('./utils/llm-helpers');
 
 class LLMAnalyzer {
-  constructor() {
-    this.endpoint = process.env.OLLAMA_ENDPOINT || 'http://localhost:11434';
-    this.model = 'qwen2.5:7b';
-    this.promptCache = new Map();
-    this.loadPrompts();
+  constructor(configPath = null) {
+    const defaultConfigPath = path.join(__dirname, '../config/models.yaml');
+    const resolvedPath = configPath || defaultConfigPath;
+
+    if (!fs.existsSync(resolvedPath)) {
+      throw new Error(`LLM model config not found at ${resolvedPath}`);
+    }
+
+    this.config = yaml.load(fs.readFileSync(resolvedPath, 'utf8'));
+    const defaultProfileKey = this.config.models?.default;
+    if (!defaultProfileKey) {
+      throw new Error('LLM configuration missing models.default');
+    }
+
+    const profile = this.config.models.profiles?.[defaultProfileKey];
+    if (!profile) {
+      throw new Error(`LLM profile not found for key: ${defaultProfileKey}`);
+    }
+
+    const envEndpoint = process.env.OLLAMA_ENDPOINT;
+    this.endpoint = envEndpoint || profile.endpoint;
+    this.model = profile.model;
+    this.temperature = profile.temperature ?? 0.3;
+    this.topP = profile.top_p ?? 0.9;
+    this.maxTokens = profile.max_tokens ?? 2048;
+
+    if (!this.endpoint) {
+      throw new Error('LLM endpoint not configured');
+    }
+
+    if (this.model !== 'qwen3:4b') {
+      throw new Error(`Unsupported LLM model configured: ${this.model}. Expected qwen3:4b.`);
+    }
+
+    this.prompts = this.loadPromptTemplates();
+    this.schemaValidators = this.loadSchemaValidators();
+    logger.info(`LLMAnalyzer ready using model ${this.model} at ${this.endpoint}`);
   }
 
-  loadPrompts() {
+  loadPromptTemplates() {
     const promptDir = path.join(__dirname, 'prompts');
     const promptFiles = {
       ssr_analysis: 'ssr-analysis.txt',
@@ -20,243 +54,279 @@ class LLMAnalyzer {
       content_optimization: 'content-optimization.txt'
     };
 
+    const prompts = {};
     for (const [key, filename] of Object.entries(promptFiles)) {
       const filePath = path.join(promptDir, filename);
       try {
         const content = fs.readFileSync(filePath, 'utf8');
-        this.promptCache.set(key, content);
-        logger.debug(`Loaded prompt: ${key}`);
+        prompts[key] = content;
       } catch (error) {
-        logger.warn(`Failed to load prompt ${key}: ${error.message}`);
+        logger.error(`Failed to load prompt template ${filename}: ${error.message}`);
+        prompts[key] = this.buildFallbackTemplate(key);
       }
     }
+    return prompts;
   }
 
-  async analyze(auditResult, promptType, onProgress = null) {
-    logger.info(`LLM Analysis: ${promptType}`);
-
-    try {
-      const systemPrompt = this.promptCache.get(promptType) || this.getDefaultPrompt(promptType);
-      const userPrompt = this.buildUserPrompt(auditResult);
-
-      const response = await this.callLLM(systemPrompt, userPrompt, onProgress);
-
-      return {
-        summary: response.summary || this.extractSummary(response.text),
-        recommendations: response.recommendations || this.extractRecommendations(response.text),
-        codeExamples: response.codeExamples || [],
-        priority: response.priority || 'medium',
-        estimatedImpact: response.estimatedImpact || 'Improved AI agent visibility',
-        fullText: response.text
-      };
-    } catch (error) {
-      logger.error(`LLM analysis failed: ${error.message}`);
-      return {
-        error: true,
-        message: 'Failed to generate AI-powered recommendations',
-        fallback: this.generateFallbackRecommendations(auditResult)
-      };
-    }
-  }
-
-  async callLLM(systemPrompt, userPrompt, onProgress = null) {
-    const startTime = Date.now();
-
-    try {
-      // If no progress callback, use non-streaming mode
-      if (!onProgress) {
-        const response = await axios.post(
-          `${this.endpoint}/api/generate`,
-          {
-            model: this.model,
-            prompt: `${systemPrompt}\n\n${userPrompt}`,
-            stream: false,
-            options: {
-              temperature: 0.3,
-              top_p: 0.9,
-              num_predict: 2048
-            }
-          },
-          {
-            timeout: 60000 // 60 second timeout
-          }
-        );
-
-        const duration = Date.now() - startTime;
-        logger.info(`LLM response received in ${duration}ms`);
-
-        return {
-          text: response.data.response,
-          ...this.parseStructuredResponse(response.data.response)
-        };
-      }
-
-      // Streaming mode
-      let fullText = '';
-      const response = await axios.post(
-        `${this.endpoint}/api/generate`,
-        {
-          model: this.model,
-          prompt: `${systemPrompt}\n\n${userPrompt}`,
-          stream: true,
-          options: {
-            temperature: 0.3,
-            top_p: 0.9,
-            num_predict: 2048
-          }
-        },
-        {
-          timeout: 60000,
-          responseType: 'stream'
+  loadSchemaValidators() {
+    return {
+      recommendations: (value) => {
+        if (!Array.isArray(value) || value.length === 0) {
+          throw new Error('recommendations array must contain at least one item');
         }
-      );
 
-      return new Promise((resolve, reject) => {
-        response.data.on('data', (chunk) => {
-          try {
-            const lines = chunk.toString().split('\n').filter(line => line.trim());
-            for (const line of lines) {
-              const json = JSON.parse(line);
-              if (json.response) {
-                fullText += json.response;
-                onProgress(json.response);
-              }
-              if (json.done) {
-                const duration = Date.now() - startTime;
-                logger.info(`LLM streaming completed in ${duration}ms`);
-                resolve({
-                  text: fullText,
-                  ...this.parseStructuredResponse(fullText)
-                });
-              }
+        if (value.length !== 3) {
+          throw new Error('recommendations array must contain exactly three items');
+        }
+
+        return value.map((rec, index) => {
+          const requiredFields = ['priority', 'title', 'impact', 'effort', 'description'];
+          for (const field of requiredFields) {
+            if (!rec[field]) {
+              throw new Error(`recommendations[${index}].${field} is required`);
             }
-          } catch (error) {
-            logger.error(`Error parsing stream chunk: ${error.message}`);
           }
+          return {
+            priority: Number(rec.priority) || index + 1,
+            title: String(rec.title).trim(),
+            impact: String(rec.impact).trim(),
+            effort: String(rec.effort).trim(),
+            description: String(rec.description).trim(),
+            why_it_matters: rec.why_it_matters ? String(rec.why_it_matters).trim() : undefined,
+            code_example: rec.code_example ? String(rec.code_example).trim() : undefined
+          };
         });
+      },
+      summary: (value) => String(value || '').trim(),
+      references: (value) => ensureArray(value).map((ref) => String(ref).trim()).filter(Boolean)
+    };
+  }
 
-        response.data.on('error', (error) => {
-          reject(error);
-        });
+  async analyze(auditResult, promptKey, onProgress = null) {
+    const prompt = this.prompts[promptKey] || this.buildFallbackTemplate(promptKey);
+    const populatedPrompt = this.populateTemplate(prompt, auditResult);
 
-        response.data.on('end', () => {
-          if (fullText) {
-            resolve({
-              text: fullText,
-              ...this.parseStructuredResponse(fullText)
-            });
-          }
-        });
-      });
+    try {
+      const rawResponse = await this.callModel(populatedPrompt, onProgress);
+      const parsed = this.parseResponse(rawResponse);
+      const validated = this.validateStructuredResponse(parsed, auditResult);
+      const comparison = this.compareWithBaseline(auditResult, validated);
+
+      return {
+        ...validated,
+        comparison,
+        raw: rawResponse
+      };
     } catch (error) {
-      if (error.code === 'ECONNREFUSED') {
-        throw new Error('Ollama service is not running. Please start Ollama with: docker-compose up ollama');
-      }
-      throw error;
+      logger.error(`LLM analysis failed (${promptKey}): ${error.message}`);
+      return this.buildFallbackResponse(auditResult, promptKey, error);
     }
   }
 
-  parseStructuredResponse(text) {
-    // Try to extract structured information from the response
-    const result = {
-      summary: '',
-      recommendations: [],
-      codeExamples: [],
-      priority: 'medium'
+  populateTemplate(template, auditResult) {
+    const insertionValues = {
+      score: auditResult.score,
+      severity: auditResult.severity,
+      display_value: auditResult.displayValue,
+      findings: auditResult.findings,
+      details: auditResult.details || {}
     };
 
-    // Extract summary (first paragraph)
-    const lines = text.split('\n').filter(l => l.trim());
-    if (lines.length > 0) {
-      result.summary = lines[0];
+    let output = template;
+    const flatDetails = this.flattenDetails(insertionValues.details);
+
+    for (const [key, value] of Object.entries({
+      ...flatDetails,
+      score: insertionValues.score,
+      severity: insertionValues.severity,
+      display_value: insertionValues.display_value
+    })) {
+      const placeholder = new RegExp(`\\{${key}\\}`, 'g');
+      output = output.replace(placeholder, sanitizeForJson(value));
     }
 
-    // Extract recommendations (lines starting with numbers, bullets, or "Recommendation:")
-    const recPattern = /^[\d\-\*•][\.\):]?\s+(.+)/;
-    for (const line of lines) {
-      if (recPattern.test(line) || line.toLowerCase().includes('recommendation')) {
-        result.recommendations.push(line.replace(recPattern, '$1'));
+    if (Array.isArray(insertionValues.findings) && insertionValues.findings.length) {
+      output += '\n\nFindings Summary:\n';
+      insertionValues.findings.forEach((finding, index) => {
+        output += `${index + 1}. [${finding.type}] ${finding.title} — ${finding.message}`;
+        if (finding.recommendation) {
+          output += `\n   Recommendation: ${finding.recommendation}`;
+        }
+        output += '\n';
+      });
+    }
+
+    output += '\nReturn ONLY valid JSON following the required schema. No Markdown. No commentary.';
+    return output;
+  }
+
+  flattenDetails(details = {}) {
+    const result = {};
+
+    const walk = (obj, prefix = '') => {
+      for (const [key, value] of Object.entries(obj)) {
+        const nextKey = prefix ? `${prefix}.${key}` : key;
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          walk(value, nextKey);
+        } else {
+          result[nextKey.replace(/\.|-/g, '_')] = value;
+        }
       }
-    }
+    };
 
-    // Extract code examples (text between backticks or code blocks)
-    const codePattern = /```[\w]*\n?([\s\S]*?)```/g;
-    let match;
-    while ((match = codePattern.exec(text)) !== null) {
-      result.codeExamples.push(match[1].trim());
-    }
-
-    // Determine priority from keywords
-    const lowerText = text.toLowerCase();
-    if (lowerText.includes('critical') || lowerText.includes('urgent')) {
-      result.priority = 'high';
-    } else if (lowerText.includes('minor') || lowerText.includes('optional')) {
-      result.priority = 'low';
-    }
-
+    walk(details);
     return result;
   }
 
-  buildUserPrompt(auditResult) {
-    return `
-Audit Results:
-- Audit: ${auditResult.title}
-- Score: ${auditResult.score}/100
-- Severity: ${auditResult.severity}
-- Display Value: ${auditResult.displayValue}
-
-Findings:
-${auditResult.findings.map((f, i) => `${i + 1}. [${f.type.toUpperCase()}] ${f.title}
-   ${f.message}
-   Current Recommendation: ${f.recommendation}
-   Impact: ${f.impact}, Effort: ${f.effort}`).join('\n\n')}
-
-Details:
-${JSON.stringify(auditResult.details, null, 2)}
-
-Please provide:
-1. A brief summary of the main issues
-2. Specific, actionable recommendations with implementation steps
-3. Code examples where applicable
-4. Priority ranking for each recommendation
-`;
-  }
-
-  getDefaultPrompt(promptType) {
-    const prompts = {
-      ssr_analysis: `You are an expert in web development and AI agent optimization. Analyze the SSR (Server-Side Rendering) audit results and provide specific, actionable recommendations for improving content accessibility to AI crawlers like GPTBot, ClaudeBot, and PerplexityBot. Focus on practical implementation steps.`,
-
-      schema_recommendations: `You are an expert in Schema.org structured data and SEO. Analyze the schema coverage audit results and provide specific recommendations for implementing or improving structured data markup. Include JSON-LD code examples that follow Schema.org best practices.`,
-
-      semantic_improvements: `You are an expert in semantic HTML and web accessibility. Analyze the semantic structure audit results and provide recommendations for improving HTML structure, heading hierarchy, and landmark usage. Focus on changes that help AI agents understand content organization.`,
-
-      content_optimization: `You are an expert in content optimization for AI and machine learning systems. Analyze the content extractability audit results and provide recommendations for improving content structure, density, and organization for better AI comprehension.`
+  async callModel(prompt, onProgress) {
+    const payload = {
+      model: this.model,
+      prompt,
+      stream: Boolean(onProgress),
+      options: {
+        temperature: this.temperature,
+        top_p: this.topP,
+        num_predict: this.maxTokens
+      }
     };
 
-    return prompts[promptType] || `You are an AI agent optimization expert. Analyze the audit results and provide specific, actionable recommendations.`;
+    if (!onProgress) {
+      const response = await axios.post(`${this.endpoint}/api/generate`, payload, { timeout: 60000 });
+      return response.data.response;
+    }
+
+    const response = await axios.post(`${this.endpoint}/api/generate`, payload, {
+      timeout: 60000,
+      responseType: 'stream'
+    });
+
+    return new Promise((resolve, reject) => {
+      let aggregated = '';
+      response.data.on('data', (chunk) => {
+        const lines = chunk.toString().split('\n').filter(Boolean);
+        for (const line of lines) {
+          try {
+            const json = JSON.parse(line);
+            if (json.response) {
+              aggregated += json.response;
+              onProgress(json.response);
+            }
+            if (json.done) {
+              resolve(aggregated);
+            }
+          } catch (parseError) {
+            logger.debug(`Streaming parse error: ${parseError.message}`);
+          }
+        }
+      });
+
+      response.data.on('error', reject);
+      response.data.on('end', () => resolve(aggregated));
+    });
   }
 
-  extractSummary(text) {
-    const lines = text.split('\n').filter(l => l.trim());
-    return lines[0] || 'Analysis completed. See recommendations below.';
+  parseResponse(rawText) {
+    if (!rawText) {
+      throw new Error('Empty model response');
+    }
+
+    const trimmed = rawText.trim();
+    const jsonMatch = trimmed.match(/```json\s*([\s\S]*?)\s*```/i) || trimmed.match(/\{[\s\S]*\}/);
+
+    let structuredText = trimmed;
+    if (jsonMatch) {
+      structuredText = jsonMatch[1] || jsonMatch[0];
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(structuredText);
+    } catch (error) {
+      logger.warn('Model returned malformed JSON, attempting repair');
+      const repaired = this.repairJson(structuredText);
+      parsed = JSON.parse(repaired);
+    }
+
+    return parsed;
   }
 
-  extractRecommendations(text) {
-    const lines = text.split('\n').filter(l => l.trim());
-    const recPattern = /^[\d\-\*•][\.\):]?\s+(.+)/;
-
-    return lines
-      .filter(line => recPattern.test(line))
-      .map(line => line.replace(recPattern, '$1'))
-      .slice(0, 5); // Top 5 recommendations
+  repairJson(text) {
+    let repaired = text.replace(/,\s*(\}|\])/g, '$1');
+    repaired = repaired.replace(/(\{|,)\s*([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+    const firstBrace = repaired.indexOf('{');
+    const lastBrace = repaired.lastIndexOf('}');
+    if (firstBrace === -1 || lastBrace === -1) {
+      throw new Error('Unable to locate JSON object in response');
+    }
+    return repaired.slice(firstBrace, lastBrace + 1);
   }
 
-  generateFallbackRecommendations(auditResult) {
-    // Generate basic recommendations from audit findings without LLM
+  validateStructuredResponse(parsed, auditResult) {
+    const validated = {};
+
+    for (const [key, validator] of Object.entries(this.schemaValidators)) {
+      if (parsed[key] === undefined) {
+        if (key === 'recommendations') {
+          throw new Error('Model response missing recommendations');
+        }
+        continue;
+      }
+
+      validated[key] = validator(parsed[key]);
+    }
+
+    const meta = {
+      auditTitle: auditResult.title,
+      score: auditResult.score,
+      severity: auditResult.severity
+    };
+
+    return { ...meta, ...validated };
+  }
+
+  compareWithBaseline(auditResult, llmRecommendations) {
+    const baseline = ensureArray(auditResult.findings).map((finding) => ({
+      title: finding.title,
+      recommendation: finding.recommendation,
+      impact: finding.impact,
+      effort: finding.effort
+    }));
+
+    const enhanced = ensureArray(llmRecommendations.recommendations);
     return {
-      summary: `Based on the ${auditResult.title} audit, ${auditResult.findings.length} issue(s) were found.`,
-      recommendations: auditResult.findings.map(f => f.recommendation),
-      note: 'These are automated recommendations. For more detailed analysis, ensure the LLM service is running.'
+      baselineCount: baseline.length,
+      llmCount: enhanced.length,
+      improvement: Math.max(0, enhanced.length - baseline.length),
+      coverage: baseline.length ? Math.min(1, enhanced.length / baseline.length) : 1
+    };
+  }
+
+  buildFallbackTemplate(key) {
+    return `You are an AI assistant tasked with generating actionable recommendations for the audit: ${key}. Provide three numbered recommendations with priority, impact, effort, description, and why it matters. Return valid JSON.`;
+  }
+
+  buildFallbackResponse(auditResult, promptKey, error) {
+    return {
+      auditTitle: auditResult.title,
+      score: auditResult.score,
+      severity: auditResult.severity,
+      summary: `Failed to retrieve AI recommendations for ${auditResult.title}. Error: ${error.message}`,
+      recommendations: auditResult.findings.map((finding, index) => ({
+        priority: index + 1,
+        title: finding.title,
+        impact: finding.impact,
+        effort: finding.effort,
+        description: finding.recommendation,
+        why_it_matters: finding.message
+      })),
+      comparison: {
+        baselineCount: auditResult.findings.length,
+        llmCount: auditResult.findings.length,
+        improvement: 0,
+        coverage: 1
+      },
+      fallback: true,
+      raw: null
     };
   }
 }

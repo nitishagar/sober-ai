@@ -50,14 +50,14 @@ docker ps
 npm run ollama:pull
 ```
 
-This downloads Qwen2.5-7B (~4.5GB). Output shows download progress.
+This downloads Qwen3 4B (~2.5GB). Output shows download progress.
 
 **Verify model is ready:**
 ```bash
 curl http://localhost:11434/api/tags
 ```
 
-Should show `qwen2.5:7b` in the list.
+Should show `qwen3:4b` in the list.
 
 ### 4. Start the Application (5 seconds)
 
@@ -133,7 +133,7 @@ sleep 30
 npm run ollama:pull
 
 # Or manually:
-docker exec sober-ollama ollama pull qwen2.5:7b
+docker exec sober-ollama ollama pull qwen3:4b
 ```
 
 ### "Port 3000 already in use"

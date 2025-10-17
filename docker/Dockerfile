@@ -19,10 +19,14 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --production=false
+RUN npm install
 
-# Copy source code (config is inside src/)
+# Copy source code
 COPY src/ ./src/
+COPY backend/ ./backend/
+
+# Generate Prisma client
+RUN npx prisma generate --schema=./backend/src/db/schema.prisma || echo "Prisma generation skipped"
 
 # Expose port
 EXPOSE 3000

@@ -10,6 +10,21 @@ const router = express.Router();
 // Store active audit sessions
 const activeSessions = new Map();
 
+// Cleanup old sessions every 5 minutes
+const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const sessionTimestamps = new Map();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [sessionId, timestamp] of sessionTimestamps.entries()) {
+    if (now - timestamp > SESSION_TIMEOUT) {
+      activeSessions.delete(sessionId);
+      sessionTimestamps.delete(sessionId);
+      console.log(`[API] Cleaned up expired session: ${sessionId}`);
+    }
+  }
+}, 60000); // Check every minute
+
 /**
  * POST /api/audit-progress
  * Start an audit with SSE progress updates
@@ -36,6 +51,7 @@ router.post('/', authenticate, checkUsageLimit, async (req, res) => {
   // Create event emitter for this session
   const progressEmitter = new EventEmitter();
   activeSessions.set(sessionId, progressEmitter);
+  sessionTimestamps.set(sessionId, Date.now());
 
   // Send progress updates to client
   const sendProgress = (data) => {
@@ -126,14 +142,43 @@ router.post('/', authenticate, checkUsageLimit, async (req, res) => {
 
     console.info = console.log;
 
+    // Map audit names to human-readable labels
+    const getAuditLabel = (auditName) => {
+      const labels = {
+        ssrReadiness: 'SSR Readiness',
+        schemaCoverage: 'Schema Coverage',
+        semanticStructure: 'Semantic Structure',
+        contentExtractability: 'Content Quality'
+      };
+      return labels[auditName] || auditName;
+    };
+
     // Create progress callback for LLM streaming
-    let tokenCount = 0;
+    // Track token counts per audit for accurate progress
+    const auditTokenCounts = {};
+    let currentAudit = null;
+
     const llmProgressCallback = (auditName, token) => {
-      tokenCount++;
-      // Update progress every 10 tokens to avoid too many updates
+      // Reset count if we're analyzing a new audit
+      if (currentAudit !== auditName) {
+        currentAudit = auditName;
+        auditTokenCounts[auditName] = 0;
+      }
+
+      auditTokenCounts[auditName]++;
+      const tokenCount = auditTokenCounts[auditName];
+
+      // Update progress every 10 tokens
       if (tokenCount % 10 === 0) {
-        const estimatedProgress = Math.min(95, tokenCount / 5); // Estimate based on token count
-        emitPhaseProgress(4, `AI analyzing ${auditName}...`, estimatedProgress);
+        // Improved estimation: 3 recommendations × ~300 tokens each = ~900 total
+        // Progress = (tokenCount / 900) * 100, capped at 95%
+        const estimatedProgress = Math.min(95, (tokenCount / 900) * 100);
+
+        // Calculate which recommendation we're on (1 of 3, 2 of 3, 3 of 3)
+        const recNumber = Math.min(3, Math.floor(tokenCount / 300) + 1);
+
+        const auditLabel = getAuditLabel(auditName);
+        emitPhaseProgress(4, `Analyzing ${auditLabel}... (${recNumber}/3 recommendations)`, estimatedProgress);
       }
     };
 
@@ -174,16 +219,32 @@ router.post('/', authenticate, checkUsageLimit, async (req, res) => {
     }, 1000);
 
   } catch (error) {
-    console.error(`[API] Audit failed: ${error.message}`);
+    console.error(`[API] Audit failed for ${url}:`, error);
 
     // Restore console
     console.log = originalLog;
     console.info = originalInfo;
 
+    // Determine error type for better messaging
+    let errorMessage = 'Audit failed';
+    if (error.message.includes('timeout')) {
+      errorMessage = 'Audit timed out. The website may be too slow or unreachable.';
+    } else if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
+      errorMessage = 'Could not reach the website. Please check the URL.';
+    } else if (error.message.includes('LLM')) {
+      errorMessage = 'AI analysis failed. Please try again.';
+    } else {
+      errorMessage = error.message || 'Audit failed';
+    }
+
     sendProgress({
       status: 'error',
-      message: error.message || 'Audit failed',
-      progress: 0
+      message: errorMessage,
+      progress: 0,
+      error: {
+        type: error.name,
+        details: error.message
+      }
     });
 
     setTimeout(() => {

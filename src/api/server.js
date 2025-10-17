@@ -6,11 +6,15 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 
 // Import routes
-const auditRouter = require('../../backend/src/api/routes/audit');
-const auditProgressRouter = require('../../backend/src/api/routes/audit-progress');
+// Phase 2 MVP routes (with auth and streaming)
 const authRouter = require('../../backend/src/api/routes/auth');
+const auditProgressRouter = require('../../backend/src/api/routes/audit-progress');
+const mvpAuditRouter = require('../../backend/src/api/routes/audit');
 const reportsRouter = require('../../backend/src/api/routes/reports');
-const reportRouter = require('./routes/report'); // Legacy Phase 1 route
+
+// Phase 1 routes (legacy, no auth)
+const auditRouter = require('./routes/audit');
+const reportRouter = require('./routes/report');
 const batchRouter = require('./routes/batch');
 const statusRouter = require('./routes/status');
 const errorHandler = require('./middleware/error-handler');
@@ -67,13 +71,14 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes - MVP routes with authentication
+// Phase 2 MVP routes (with authentication and streaming)
 app.use('/api/auth', authRouter);
-app.use('/api/audit', auditRouter);
-app.use('/api/audit-progress', auditProgressRouter);
-app.use('/api/reports', reportsRouter);
+app.use('/api/audit-progress', auditProgressRouter); // SSE streaming audit
+app.use('/api/mvp/audit', mvpAuditRouter); // Authenticated audit
+app.use('/api/reports', reportsRouter); // Report management
 
-// Legacy Phase 1 routes (for backward compatibility)
+// Phase 1 routes (legacy, backward compatibility, no auth)
+app.use('/api/audit', auditRouter); // Simple audit, no auth
 app.use('/api/report', reportRouter);
 app.use('/api/batch', batchRouter);
 app.use('/api/status', statusRouter);

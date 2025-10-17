@@ -12,7 +12,7 @@ SoberAI Optimizer is the first specialized tool for ensuring your website works 
 - **Schema.org Coverage (20%)** - Structured data for AI understanding
 - **Semantic HTML Analysis (20%)** - Proper content hierarchy and structure
 - **Content Extractability (20%)** - Optimized for LLM comprehension
-- **AI-Powered Recommendations** - Using Qwen2.5-7B for actionable insights
+- **AI-Powered Recommendations** - Using Qwen3 4B for actionable insights
 
 ## Quick Start
 
@@ -41,14 +41,14 @@ docker-compose -f docker/docker-compose.yml up -d
 npm run docker:up
 ```
 
-3. **Pull the Qwen2.5-7B Model**
+3. **Pull the Qwen3 4B Model**
 
 ```bash
-# This downloads the ~4.5GB model (one-time operation)
+# This downloads the ~2.5GB model (one-time operation)
 npm run ollama:pull
 
 # Or manually:
-docker exec sober-ollama ollama pull qwen2.5:7b
+docker exec sober-ollama ollama pull qwen3:4b
 ```
 
 4. **Start Development Server**
@@ -75,7 +75,7 @@ docker ps
 
 # Should see:
 # - sober-app (Node.js application)
-# - sober-ollama (Ollama with Qwen2.5-7B)
+# - sober-ollama (Ollama with Qwen3 4B)
 
 # Check Ollama health
 curl http://localhost:11434/api/tags
@@ -93,7 +93,7 @@ curl -X POST http://localhost:3000/api/audit \
 - **Runtime**: Node.js 20+ (ARM-optimized)
 - **Framework**: Express.js
 - **Browser Automation**: Playwright
-- **LLM**: Qwen2.5-7B via Ollama
+- **LLM**: Qwen3 4B via Ollama
 - **Configuration**: YAML
 - **Testing**: Jest + Playwright Test
 

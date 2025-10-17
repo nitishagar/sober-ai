@@ -25,11 +25,25 @@ CONTENT BEST PRACTICES:
 - Topic sentences: Clear main idea at paragraph start
 
 OUTPUT FORMAT:
-Provide a clear, structured response with:
-1. Summary of content extractability issues
-2. Specific content structure improvements
-3. Before/after examples for key issues
-4. Recommendations for adding metadata
-5. Tips for maintaining balance between human and AI optimization
+Return ONLY valid JSON with this exact structure (no Markdown, no commentary):
+{
+  "summary": "<50 word overview of content issues>",
+  "references": ["Optional list of docs or tools"],
+  "recommendations": [
+    {
+      "priority": 1,
+      "title": "Recommendation title",
+      "impact": "High|Medium|Low",
+      "effort": "High|Medium|Low",
+      "description": "Implementation guidance with measurable targets",
+      "why_it_matters": "Explain how this improves AI extraction",
+      "code_example": "Before/after content snippet or structure"
+    }
+  ]
+}
 
-Be specific and practical. Show concrete examples of content improvements.
+Rules:
+- Provide EXACTLY 3 recommendations ordered by priority (1 = highest).
+- Include numeric targets (e.g., target paragraph length, ratio) inside the description.
+- Ensure code_example demonstrates the improvement clearly.
+- Mention monitoring or verification steps (analytics, readability tests) when applicable.

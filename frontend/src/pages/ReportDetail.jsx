@@ -123,7 +123,18 @@ function renderRecommendations(recommendations) {
             {value.recommendations && Array.isArray(value.recommendations) && (
               <ul className="recommendation-items">
                 {value.recommendations.map((rec, idx) => (
-                  <li key={idx}>{rec}</li>
+                  <li key={idx}>
+                    {typeof rec === 'string' ? rec : (
+                      <div className="recommendation-item">
+                        <strong>{rec.title}</strong>
+                        {rec.description && <p>{rec.description}</p>}
+                        {rec.why_it_matters && <p><em>Why it matters:</em> {rec.why_it_matters}</p>}
+                        {rec.effort && <span className="badge">Effort: {rec.effort}</span>}
+                        {rec.impact && <span className="badge">Impact: {rec.impact}</span>}
+                        {rec.priority && <span className="badge">Priority: {rec.priority}</span>}
+                      </div>
+                    )}
+                  </li>
                 ))}
               </ul>
             )}

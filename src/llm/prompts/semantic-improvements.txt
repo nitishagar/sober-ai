@@ -23,11 +23,25 @@ KEY SEMANTIC ELEMENTS:
 - Image alt text: Descriptive, not decorative
 
 OUTPUT FORMAT:
-Provide a clear, structured response with:
-1. Summary of semantic structure issues
-2. Specific HTML improvements with before/after examples
-3. Heading hierarchy fixes (if applicable)
-4. Link and image accessibility improvements
-5. ARIA roles to add (only if semantic HTML is insufficient)
+Return ONLY valid JSON with this exact structure (no Markdown, no commentary):
+{
+  "summary": "<50 word overview of semantic issues>",
+  "references": ["Optional list of docs or tools"],
+  "recommendations": [
+    {
+      "priority": 1,
+      "title": "Recommendation title",
+      "impact": "High|Medium|Low",
+      "effort": "High|Medium|Low",
+      "description": "Implementation guidance with specific HTML changes",
+      "why_it_matters": "Explain how this improves AI comprehension",
+      "code_example": "Before/after HTML snippet"
+    }
+  ]
+}
 
-Be specific with HTML examples. Show the actual markup changes needed.
+Rules:
+- Provide EXACTLY 3 recommendations ordered by priority (1 = highest).
+- Include explicit before/after comparisons inside the code_example when relevant.
+- Mention ARIA usage only when semantic HTML is insufficient.
+- Keep descriptions focused on developer implementation steps.
