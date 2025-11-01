@@ -1,8 +1,37 @@
 {
   "name": "sober-ai-optimizer",
   "version": "0.2.0",
-  "description": "AI Agent Website Optimizer - MVP with Authentication",
+  "description": "AI Agent Website Optimizer - Lighthouse for the AI Age. Evaluate and optimize websites for AI agent interactions with comprehensive audits and LLM-powered recommendations.",
   "main": "src/api/server.js",
+  "author": {
+    "name": "Nitish Agarwal",
+    "email": "nitishagar@gmail.com"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nitishagar/sober-ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nitishagar/sober-ai/issues"
+  },
+  "homepage": "https://github.com/nitishagar/sober-ai#readme",
+  "keywords": [
+    "ai-agents",
+    "website-optimization",
+    "llm",
+    "lighthouse",
+    "schema-org",
+    "seo",
+    "web-audit",
+    "ssr-detection",
+    "structured-data",
+    "website-analyzer",
+    "ai-crawler",
+    "semantic-html",
+    "content-analysis",
+    "developer-tools"
+  ],
   "scripts": {
     "start": "node src/api/server.js",
     "dev": "nodemon src/api/server.js",

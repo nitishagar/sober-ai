@@ -1,6 +1,27 @@
 # SoberAI Optimizer
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
+[![GitHub Issues](https://img.shields.io/github/issues/nitishagar/sober-ai)](https://github.com/nitishagar/sober-ai/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/nitishagar/sober-ai)](https://github.com/nitishagar/sober-ai/stargazers)
+[![Version](https://img.shields.io/badge/version-0.2.0-orange.svg)](https://github.com/nitishagar/sober-ai/releases)
+
 **Lighthouse for the AI Age** - A comprehensive website auditing tool specifically designed to evaluate and optimize websites for AI agent interactions.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Quick Start](#quick-start)
+- [Architecture](#architecture)
+- [Usage](#usage)
+- [Testing](#testing)
+- [Performance](#performance)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
+- [Support](#support)
 
 ## Overview
 
@@ -18,72 +39,83 @@ SoberAI Optimizer is the first specialized tool for ensuring your website works 
 
 ### Prerequisites
 
-- Node.js 20+ (for ARM Macs)
-- Docker Desktop (for containerized deployment)
+- Node.js 20+
+- Docker Desktop with Docker Compose
 - 8GB+ RAM available
 - macOS (ARM/Intel) or Linux
 
-### Local Development Setup
+### Unified Local Development Setup
 
-1. **Install Dependencies**
+The easiest way to get started is using the unified Docker Compose setup that includes all services (PostgreSQL, Redis, Ollama, Backend, Frontend):
+
+1. **Clone and Install**
 
 ```bash
+git clone https://github.com/nitishagar/sober-ai.git
+cd sober-ai
 npm install
 ```
 
-2. **Start Docker Services**
+2. **Start All Services**
 
 ```bash
-# Build and start all services (Ollama + App)
-docker-compose -f docker/docker-compose.yml up -d
+# Start unified Docker environment (database, Redis, Ollama, backend, frontend)
+npm run local:start
 
-# Or use the npm script
-npm run docker:up
+# This will:
+# - Start PostgreSQL database
+# - Start Redis cache
+# - Start Ollama with automatic Qwen3 4B model download (~2.5GB, first time only)
+# - Run database migrations
+# - Start backend API with hot-reload
+# - Start frontend with hot-reload
 ```
 
-3. **Pull the Qwen3 4B Model**
+3. **Access the Application**
 
-```bash
-# This downloads the ~2.5GB model (one-time operation)
-npm run ollama:pull
-
-# Or manually:
-docker exec sober-ollama ollama pull qwen3:4b
-```
-
-4. **Start Development Server**
-
-```bash
-# With hot-reload
-npm run dev
-
-# Or without hot-reload
-npm start
-```
-
-5. **Access the Application**
-
-- **Web UI**: http://localhost:3000
-- **API**: http://localhost:3000/api/audit
+- **Web UI**: http://localhost:5173
+- **API**: http://localhost:3001/api
+- **API Health**: http://localhost:3001/api/health
 - **Ollama**: http://localhost:11434
 
-### Verify Installation
+4. **Verify Installation**
 
 ```bash
-# Check if services are running
-docker ps
+# Check all services are running
+npm run local:ps
 
-# Should see:
-# - sober-app (Node.js application)
-# - sober-ollama (Ollama with Qwen3 4B)
+# Check logs
+npm run local:logs
 
-# Check Ollama health
-curl http://localhost:11434/api/tags
+# Test API health
+curl http://localhost:3001/api/health
 
 # Test audit endpoint
-curl -X POST http://localhost:3000/api/audit \
+curl -X POST http://localhost:3001/api/audits \
   -H "Content-Type: application/json" \
   -d '{"url":"https://vercel.com"}'
+```
+
+5. **Stop Services**
+
+```bash
+# Stop all services
+npm run local:stop
+```
+
+### Alternative: Development Setup
+
+For development without Docker (requires manual PostgreSQL, Redis, Ollama setup):
+
+```bash
+# Install dependencies
+npm install
+
+# Start frontend dev server
+npm run dev
+
+# Start backend API
+npm start
 ```
 
 ## Architecture
@@ -246,13 +278,16 @@ Test with known websites:
 
 ```bash
 # Check logs
-docker logs sober-ollama
+npm run local:logs
 
-# Restart service
-docker-compose -f docker/docker-compose.yml restart ollama
+# Or check Ollama specifically
+docker logs sober-ollama-local
 
 # Verify model is downloaded
-docker exec sober-ollama ollama list
+docker exec sober-ollama-local ollama list
+
+# Verify model is working
+curl http://localhost:11434/api/tags
 ```
 
 ### Playwright Browser Issues
@@ -341,17 +376,33 @@ LOG_LEVEL=info
 
 ## Contributing
 
-This is currently a Phase 1 implementation. Contributions welcome after public beta launch.
+We welcome contributions from the community! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
+
+- Development setup
+- Code style and standards
+- Testing requirements
+- Pull request process
+- Code of Conduct
+
+Before contributing, please read:
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Architecture Documentation](docs/ARCHITECTURE.md)
+- [API Documentation](docs/API.md)
 
 ## License
 
-MIT (to be confirmed)
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
-- **Issues**: GitHub Issues (when repository is public)
-- **Documentation**: `/docs` directory
-- **API Docs**: `/docs/API.md`
+- **Issues**: [GitHub Issues](https://github.com/nitishagar/sober-ai/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/nitishagar/sober-ai/discussions)
+- **Security**: Report vulnerabilities via [Security Advisories](https://github.com/nitishagar/sober-ai/security/advisories/new)
+- **Documentation**:
+  - [API Documentation](docs/API.md)
+  - [Architecture Guide](docs/ARCHITECTURE.md)
+  - [Contributing Guidelines](CONTRIBUTING.md)
+  - [Security Policy](SECURITY.md)
 
 ## Credits
 
@@ -361,6 +412,10 @@ Built with insights from:
 - Schema.org best practices
 - Community feedback from AI/web dev communities
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+
 ---
 
-**Phase 1 Beta** - Last updated: 2025-10-02
+**Version 0.2.0** - Last updated: 2025-11-01
