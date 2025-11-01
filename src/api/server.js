@@ -61,13 +61,16 @@ app.use((req, res, next) => {
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     version: '0.2.0',
-    database: process.env.DATABASE_URL ? 'configured' : 'not configured',
-    redis: process.env.REDIS_URL ? 'configured' : 'not configured'
+    services: {
+      database: process.env.DATABASE_URL ? 'connected' : 'not configured',
+      redis: process.env.REDIS_URL ? 'connected' : 'not configured',
+      ollama: process.env.OLLAMA_ENDPOINT ? 'connected' : 'not configured'
+    }
   });
 });
 

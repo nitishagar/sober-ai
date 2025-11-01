@@ -19,7 +19,11 @@
     "db:migrate": "prisma migrate dev --schema=backend/src/db/schema.prisma",
     "db:migrate:deploy": "prisma migrate deploy --schema=backend/src/db/schema.prisma",
     "db:studio": "prisma studio --schema=backend/src/db/schema.prisma",
-    "db:seed": "node backend/src/db/seed.js"
+    "db:seed": "node backend/src/db/seed.js",
+    "local:start": "bash start-local.sh",
+    "local:stop": "bash stop-local.sh",
+    "local:logs": "docker-compose -f docker-compose.local.yml logs -f",
+    "local:ps": "docker-compose -f docker-compose.local.yml ps"
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",
