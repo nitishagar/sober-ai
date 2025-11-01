@@ -1,9 +1,9 @@
 const express = require('express');
-const Auditor = require('../../../../src/core/auditor');
+const Auditor = require('../../core/auditor');
 const reportService = require('../../services/reportService');
 const authService = require('../../services/authService');
 const { authenticate, checkUsageLimit } = require('../middleware/auth');
-const { validateAuditRequest } = require('../../../../src/utils/validator');
+const { validateAuditRequest } = require('../../utils/validator');
 
 const router = express.Router();
 

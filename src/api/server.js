@@ -7,10 +7,10 @@ const fs = require('fs');
 
 // Import routes
 // Phase 2 MVP routes (with auth and streaming)
-const authRouter = require('../../backend/src/api/routes/auth');
-const auditProgressRouter = require('../../backend/src/api/routes/audit-progress');
-const mvpAuditRouter = require('../../backend/src/api/routes/audit');
-const reportsRouter = require('../../backend/src/api/routes/reports');
+const authRouter = require('./routes/auth');
+const auditProgressRouter = require('./routes/audit-progress');
+const mvpAuditRouter = require('./routes/audit-mvp');
+const reportsRouter = require('./routes/reports');
 
 // Phase 1 routes (legacy, no auth)
 const auditRouter = require('./routes/audit');

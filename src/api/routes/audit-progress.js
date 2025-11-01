@@ -1,6 +1,6 @@
 const express = require('express');
 const { authenticate, checkUsageLimit } = require('../middleware/auth');
-const Auditor = require('../../../../src/core/auditor');
+const Auditor = require('../../core/auditor');
 const reportService = require('../../services/reportService');
 const authService = require('../../services/authService');
 const { EventEmitter } = require('events');

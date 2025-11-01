@@ -66,7 +66,6 @@ services:
       - "3000:3000"
     volumes:
       - ./src:/app/src
-      - ./backend:/app/backend
     environment:
       - NODE_ENV=development
       - PORT=3000
@@ -84,9 +83,9 @@ services:
     command: >
       sh -c "
         echo '[Backend] Waiting for dependencies...' &&
-        npx prisma migrate deploy --schema=backend/src/db/schema.prisma &&
+        npx prisma migrate deploy --schema=src/db/schema.prisma &&
         echo '[Backend] Migrations applied' &&
-        node backend/src/db/seed.js &&
+        node src/db/seed.js &&
         echo '[Backend] Database seeded' &&
         npm run dev
       "

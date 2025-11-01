@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-11-01
+
+### Changed
+- **BREAKING**: Consolidated `backend/src/` into `src/` for cleaner project structure
+- Updated all import paths to use unified source directory
+- Updated Docker configuration to reflect new structure
+- Prisma schema now located at `src/db/schema.prisma` (was `backend/src/db/schema.prisma`)
+- All npm scripts updated to reference `src/` instead of `backend/src/`
+- Updated README project structure documentation to match actual implementation
+
+### Migration Guide
+If you have an existing local development environment:
+1. Pull latest changes: `git pull`
+2. Remove old dependencies: `rm -rf node_modules`
+3. Reinstall dependencies: `npm install`
+4. Regenerate Prisma client: `npm run db:generate`
+5. Rebuild Docker images: `docker-compose -f docker-compose.local.yml build`
+6. Restart services: `npm run local:stop && npm run local:start`
+
 ## [Unreleased]
 
 ### Added

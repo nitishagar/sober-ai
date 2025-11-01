@@ -23,10 +23,9 @@ RUN npm install
 
 # Copy source code
 COPY src/ ./src/
-COPY backend/ ./backend/
 
 # Generate Prisma client
-RUN npx prisma generate --schema=./backend/src/db/schema.prisma || echo "Prisma generation skipped"
+RUN npx prisma generate --schema=./src/db/schema.prisma || echo "Prisma generation skipped"
 
 # Expose port
 EXPOSE 3000

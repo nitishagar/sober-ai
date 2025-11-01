@@ -13,10 +13,9 @@ RUN npx playwright install --with-deps chromium
 
 # Copy all source code
 COPY src/ ./src/
-COPY backend/ ./backend/
 
 # Generate Prisma client
-RUN npx prisma generate --schema=backend/src/db/schema.prisma
+RUN npx prisma generate --schema=src/db/schema.prisma
 
 EXPOSE 3000
 
