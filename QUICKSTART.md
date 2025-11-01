@@ -21,7 +21,8 @@ docker --version
 ### 1. Install Dependencies (1 minute)
 
 ```bash
-cd /Users/nagarwal/repos/ai-work/sober-ai
+# Navigate to the project directory
+cd sober-ai
 npm install
 ```
 

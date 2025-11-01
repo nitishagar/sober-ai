@@ -1,3 +1,4 @@
 #!/bin/bash
-cd /Users/nagarwal/repos/ai-work/sober-ai/frontend
+# Navigate to frontend directory relative to script location
+cd "$(dirname "$0")/frontend"
 npx vite
