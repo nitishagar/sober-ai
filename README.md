@@ -6,6 +6,8 @@
 [![GitHub Stars](https://img.shields.io/github/stars/nitishagar/sober-ai)](https://github.com/nitishagar/sober-ai/stargazers)
 [![Version](https://img.shields.io/badge/version-0.2.0-orange.svg)](https://github.com/nitishagar/sober-ai/releases)
 
+![sober-ai(2)](https://github.com/user-attachments/assets/ae07e349-880c-49fe-812b-8f1063abf593)
+
 **Lighthouse for the AI Age** - A comprehensive website auditing tool specifically designed to evaluate and optimize websites for AI agent interactions.
 
 ## Table of Contents
