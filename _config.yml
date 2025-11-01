@@ -1,0 +1,96 @@
+# GitHub Pages Configuration for SoberAI Optimizer
+# This enables GitHub Pages to automatically render the repository as a website
+
+# Site settings
+title: SoberAI Optimizer
+description: Lighthouse for the AI Age - Evaluate and optimize websites for AI agent interactions
+url: https://nitishagar.github.io
+baseurl: /sober-ai
+author: Nitish Agarwal
+email: nitishagar@gmail.com
+
+# Theme
+theme: jekyll-theme-cayman
+remote_theme: pages-themes/cayman@v0.2.0
+
+# Build settings
+markdown: kramdown
+plugins:
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Enable GitHub-flavored markdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# SEO settings
+lang: en-US
+twitter:
+  card: summary_large_image
+logo: /assets/images/logo.png
+
+# Repository information
+github:
+  repository_url: https://github.com/nitishagar/sober-ai
+  repository_name: sober-ai
+  owner_name: nitishagar
+  is_project_page: true
+
+# Navigation
+navigation:
+  - title: Home
+    url: /
+  - title: Documentation
+    url: /docs/API
+  - title: Architecture
+    url: /docs/ARCHITECTURE
+  - title: Contributing
+    url: /CONTRIBUTING
+  - title: GitHub
+    url: https://github.com/nitishagar/sober-ai
+
+# Files to exclude from site
+exclude:
+  - node_modules/
+  - package.json
+  - package-lock.json
+  - .aider*
+  - .claude/
+  - thoughts/
+  - prds/
+  - backend/
+  - frontend/
+  - src/
+  - tests/
+  - docker/
+  - .gitignore
+  - .env*
+  - "*.sh"
+  - Dockerfile
+  - docker-compose*.yml
+
+# Include these files
+include:
+  - README.md
+  - CONTRIBUTING.md
+  - CODE_OF_CONDUCT.md
+  - SECURITY.md
+  - CHANGELOG.md
+  - LICENSE
+  - NOTICE
+  - docs/
+
+# Show future posts
+future: true
+
+# Collections
+collections_dir: docs
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
