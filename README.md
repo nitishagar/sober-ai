@@ -135,8 +135,9 @@ npm start
 sober-ai/
 ├── src/
 │   ├── api/                  # Express API server
-│   │   ├── routes/          # API endpoints
-│   │   └── middleware/      # Error handling
+│   │   ├── routes/          # API endpoints (Phase 1 + Phase 2)
+│   │   ├── middleware/      # Auth + error handling
+│   │   └── server.js        # Main entry point
 │   ├── core/                # Core orchestration
 │   │   ├── auditor.js       # Main audit coordinator
 │   │   └── scorer.js        # Weighted scoring
@@ -153,10 +154,23 @@ sober-ai/
 │   ├── llm/                 # LLM integration
 │   │   ├── analyzer.js
 │   │   └── prompts/
-│   ├── ui/                  # Web interface
+│   ├── db/                  # Database (Prisma)
+│   │   ├── schema.prisma   # Database schema
+│   │   ├── migrations/      # Migration files
+│   │   └── seed.js          # Seed data
+│   ├── services/            # Business logic services
+│   │   ├── authService.js
+│   │   └── reportService.js
+│   ├── queue/               # Bull queue jobs
+│   ├── ui/                  # Phase 1 web interface
 │   │   └── public/
 │   ├── config/              # YAML configuration
 │   └── utils/               # Shared utilities
+├── frontend/                # Phase 2 React UI
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── vite.config.js
 ├── docker/                  # Docker configuration
 ├── tests/                   # Test suites
 └── docs/                    # Documentation

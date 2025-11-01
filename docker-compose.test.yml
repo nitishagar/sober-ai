@@ -70,8 +70,8 @@ services:
         condition: service_started
     command: >
       sh -c "
-        npx prisma migrate deploy --schema=backend/src/db/schema.prisma &&
-        node backend/src/db/seed.js &&
+        npx prisma migrate deploy --schema=src/db/schema.prisma &&
+        node src/db/seed.js &&
         npm run dev
       "
 
