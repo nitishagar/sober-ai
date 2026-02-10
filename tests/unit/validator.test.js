@@ -52,6 +52,15 @@ describe('Validator', () => {
       expect(result.valid).toBe(true);
     });
 
+
+    it('should reject zero timeout', () => {
+      const result = validateAuditRequest({
+        url: 'https://example.com',
+        options: { timeout: 0 }
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('Timeout must be a positive number');
+    });
     it('should reject invalid timeout', () => {
       const result = validateAuditRequest({
         url: 'https://example.com',
