@@ -42,6 +42,24 @@ router.get('/stats', authenticate, async (req, res) => {
 });
 
 /**
+ * GET /api/reports/compare/:id1/:id2
+ * Compare two reports
+ */
+router.get('/compare/:id1/:id2', authenticate, async (req, res) => {
+  try {
+    const comparison = await reportService.compareReports(
+      req.params.id1,
+      req.params.id2,
+      req.user.id
+    );
+    return res.json(comparison);
+  } catch (error) {
+    console.error('[API] Failed to compare reports:', error);
+    return res.status(404).json({ error: 'One or both reports not found' });
+  }
+});
+
+/**
  * GET /api/reports/:reportId
  * Get full report details
  */
@@ -66,24 +84,6 @@ router.delete('/:reportId', authenticate, async (req, res) => {
   } catch (error) {
     console.error('[API] Failed to delete report:', error);
     return res.status(404).json({ error: 'Report not found' });
-  }
-});
-
-/**
- * GET /api/reports/compare/:id1/:id2
- * Compare two reports
- */
-router.get('/compare/:id1/:id2', authenticate, async (req, res) => {
-  try {
-    const comparison = await reportService.compareReports(
-      req.params.id1,
-      req.params.id2,
-      req.user.id
-    );
-    return res.json(comparison);
-  } catch (error) {
-    console.error('[API] Failed to compare reports:', error);
-    return res.status(404).json({ error: 'One or both reports not found' });
   }
 });
 

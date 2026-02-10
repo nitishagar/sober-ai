@@ -17,7 +17,6 @@ class Auditor {
     this.llm = new LLMAnalyzer();
     this.scorer = new Scorer(config.audits.weights);
 
-    // Initialize gatherers
     this.gatherers = {
       ssr: new SSRDetectionGatherer(),
       structuredData: new StructuredDataGatherer(),
@@ -25,7 +24,6 @@ class Auditor {
       contentAnalysis: new ContentAnalysisGatherer()
     };
 
-    // Initialize audits
     this.audits = {
       ssrReadiness: new SSRReadinessAudit(),
       schemaCoverage: new SchemaCoverageAudit(),
@@ -34,26 +32,52 @@ class Auditor {
     };
   }
 
-  async audit(url, progressCallback = null) {
+  normalizeProgressHandlers(progressHandlers = null) {
+    if (!progressHandlers) {
+      return {
+        onPhase: () => {},
+        onStep: () => {},
+        onLLMToken: () => {}
+      };
+    }
+
+    // Backward compatibility for old signature: audit(url, llmProgressCallback)
+    if (typeof progressHandlers === 'function') {
+      return {
+        onPhase: () => {},
+        onStep: () => {},
+        onLLMToken: progressHandlers
+      };
+    }
+
+    return {
+      onPhase: typeof progressHandlers.onPhase === 'function' ? progressHandlers.onPhase : () => {},
+      onStep: typeof progressHandlers.onStep === 'function' ? progressHandlers.onStep : () => {},
+      onLLMToken: typeof progressHandlers.onLLMToken === 'function' ? progressHandlers.onLLMToken : () => {}
+    };
+  }
+
+  async audit(url, progressHandlers = null) {
     logger.info(`Starting audit for: ${url}`);
     const startTime = Date.now();
+    const handlers = this.normalizeProgressHandlers(progressHandlers);
 
     try {
-      // Phase 1: Gather data
+      handlers.onPhase(1, 'Gathering website data...');
       logger.info('Phase 1: Gathering data...');
-      const gatheredData = await this.runGatherers(url);
+      const gatheredData = await this.runGatherers(url, handlers.onStep);
 
-      // Phase 2: Run audits
+      handlers.onPhase(2, 'Running audits...');
       logger.info('Phase 2: Running audits...');
-      const auditResults = await this.runAudits(gatheredData);
+      const auditResults = await this.runAudits(gatheredData, handlers.onStep);
 
-      // Phase 3: Calculate scores
+      handlers.onPhase(3, 'Calculating scores...');
       logger.info('Phase 3: Calculating scores...');
       const scores = this.scorer.calculate(auditResults);
 
-      // Phase 4: Generate LLM recommendations (only for failing audits)
+      handlers.onPhase(4, 'Generating AI recommendations...');
       logger.info('Phase 4: Generating recommendations...');
-      const recommendations = await this.generateRecommendations(auditResults, progressCallback);
+      const recommendations = await this.generateRecommendations(auditResults, handlers.onLLMToken, handlers.onStep);
 
       const duration = Date.now() - startTime;
       logger.info(`Audit completed in ${duration}ms`);
@@ -77,7 +101,7 @@ class Auditor {
     }
   }
 
-  async runGatherers(url) {
+  async runGatherers(url, onStep = () => {}) {
     const browser = await chromium.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -90,17 +114,18 @@ class Auditor {
     const page = await context.newPage();
 
     try {
-      // Navigate to URL
       await page.goto(url, {
         waitUntil: 'networkidle',
         timeout: 30000
       });
 
-      // SSR detection requires special handling (separate page loads)
+      onStep({ phase: 1, step: 'ssr', message: 'Analyzing server-side rendering...' });
       logger.info('Gathering SSR data...');
       const ssrData = await this.gatherers.ssr.gather(url);
 
-      // Run other gatherers in parallel
+      onStep({ phase: 1, step: 'structuredData', message: 'Analyzing structured data...' });
+      onStep({ phase: 1, step: 'semanticHTML', message: 'Analyzing semantic HTML...' });
+      onStep({ phase: 1, step: 'contentAnalysis', message: 'Analyzing content...' });
       logger.info('Gathering other data in parallel...');
       const [structuredData, semanticData, contentData] = await Promise.all([
         this.gatherers.structuredData.gather(url, page),
@@ -119,33 +144,37 @@ class Auditor {
     }
   }
 
-  async runAudits(gatheredData) {
+  async runAudits(gatheredData, onStep = () => {}) {
     logger.info('Running all audits...');
 
-    return {
+    const results = {
       ssrReadiness: this.audits.ssrReadiness.audit(gatheredData.ssr),
       schemaCoverage: this.audits.schemaCoverage.audit(gatheredData.structuredData),
       semanticStructure: this.audits.semanticStructure.audit(gatheredData.semanticHTML),
       contentExtractability: this.audits.contentExtractability.audit(gatheredData.contentAnalysis)
     };
+
+    Object.keys(results).forEach((auditName) => {
+      onStep({ phase: 2, step: auditName, message: `Completed ${auditName} audit` });
+    });
+
+    return results;
   }
 
-  async generateRecommendations(auditResults, progressCallback = null) {
+  async generateRecommendations(auditResults, onLLMToken = () => {}, onStep = () => {}) {
     const recommendations = {};
 
-    // Generate recommendations only for failing or warning audits
     for (const [auditName, result] of Object.entries(auditResults)) {
       if (result.severity !== 'pass') {
         logger.info(`Generating recommendations for ${auditName}...`);
+        onStep({ phase: 4, step: auditName, message: `Generating recommendations for ${auditName}...` });
         try {
-          const onProgress = progressCallback ? (token) => {
-            progressCallback(auditName, token);
-          } : null;
+          const progressHandler = (token) => onLLMToken(auditName, token);
 
           recommendations[auditName] = await this.llm.analyze(
             result,
             this.getAuditType(auditName),
-            onProgress
+            progressHandler
           );
         } catch (error) {
           logger.error(`Failed to generate recommendations for ${auditName}:`, error);

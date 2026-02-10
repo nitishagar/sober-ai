@@ -17,7 +17,10 @@ function validateAuditRequest(data) {
   }
 
   if (data.options) {
-    if (data.options.timeout && (typeof data.options.timeout !== 'number' || data.options.timeout < 0)) {
+    if (
+      Object.prototype.hasOwnProperty.call(data.options, 'timeout') &&
+      (typeof data.options.timeout !== 'number' || data.options.timeout <= 0)
+    ) {
       errors.push('Timeout must be a positive number');
     }
 
