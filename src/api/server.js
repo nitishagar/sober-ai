@@ -10,7 +10,7 @@ const auditProgressRouter = require('./routes/audit-progress');
 const mvpAuditRouter = require('./routes/audit-mvp');
 const reportsRouter = require('./routes/reports');
 
-// Phase 1 routes (legacy, no auth)
+// Phase 1 routes (legacy, backward compatibility)
 const auditRouter = require('./routes/audit');
 const reportRouter = require('./routes/report');
 const batchRouter = require('./routes/batch');
@@ -41,8 +41,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from the UI
-app.use(express.static(path.join(__dirname, '../ui/public')));
+// Serve React build output (production/Electron) or legacy UI
+const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+const legacyUIPath = path.join(__dirname, '../ui/public');
+
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+} else if (fs.existsSync(legacyUIPath)) {
+  app.use(express.static(legacyUIPath));
+}
 
 // Make config available to routes
 app.use((req, res, next) => {
@@ -63,7 +70,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '0.2.0',
+    version: '0.3.0',
     services: {
       database: process.env.DATABASE_URL ? 'connected' : 'not configured',
       ollama: process.env.OLLAMA_ENDPOINT ? 'connected' : 'not configured'
@@ -72,20 +79,24 @@ app.get('/api/health', (req, res) => {
 });
 
 // API routes
-app.use('/api/audit-progress', auditProgressRouter); // SSE streaming audit
+app.use('/api/audit-progress', auditProgressRouter);
 app.use('/api/mvp/audit', mvpAuditRouter);
 app.use('/api/reports', reportsRouter);
 
-// Phase 1 routes (legacy, backward compatibility, no auth)
-app.use('/api/audit', auditRouter); // Simple audit, no auth
+// Legacy routes (backward compatibility)
+app.use('/api/audit', auditRouter);
 app.use('/api/report', reportRouter);
 app.use('/api/batch', batchRouter);
 app.use('/api/status', statusRouter);
 
-// Serve index.html for the root and any non-API routes
+// Serve index.html for the root and any non-API routes (SPA fallback)
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api/')) {
-    res.sendFile(path.join(__dirname, '../ui/public/index.html'));
+    // Try React build first, then legacy UI
+    const indexPath = fs.existsSync(path.join(frontendDistPath, 'index.html'))
+      ? path.join(frontendDistPath, 'index.html')
+      : path.join(legacyUIPath, 'index.html');
+    res.sendFile(indexPath);
   } else {
     res.status(404).json({ error: 'API endpoint not found' });
   }
@@ -94,29 +105,31 @@ app.get('*', (req, res) => {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// Start server
-const server = app.listen(PORT, () => {
-  logger.info(`SoberAI Optimizer API server running on port ${PORT}`);
-  logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.info(`Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
-  logger.info(`Ollama endpoint: ${process.env.OLLAMA_ENDPOINT || 'http://localhost:11434'}`);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
-    logger.info('HTTP server closed');
-    process.exit(0);
+// Only start listening when run directly (not imported by Electron)
+if (require.main === module) {
+  const server = app.listen(PORT, () => {
+    logger.info(`SoberAI Optimizer API server running on port ${PORT}`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
+    logger.info(`Ollama endpoint: ${process.env.OLLAMA_ENDPOINT || 'http://localhost:11434'}`);
   });
-});
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT signal received: closing HTTP server');
-  server.close(() => {
-    logger.info('HTTP server closed');
-    process.exit(0);
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    logger.info('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+      logger.info('HTTP server closed');
+      process.exit(0);
+    });
   });
-});
+
+  process.on('SIGINT', () => {
+    logger.info('SIGINT signal received: closing HTTP server');
+    server.close(() => {
+      logger.info('HTTP server closed');
+      process.exit(0);
+    });
+  });
+}
 
 module.exports = app;
