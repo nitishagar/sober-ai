@@ -1,437 +1,134 @@
 # SoberAI Optimizer
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen.svg)](https://nodejs.org/)
 [![GitHub Issues](https://img.shields.io/github/issues/nitishagar/sober-ai)](https://github.com/nitishagar/sober-ai/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/nitishagar/sober-ai)](https://github.com/nitishagar/sober-ai/stargazers)
-[![Version](https://img.shields.io/badge/version-0.2.0-orange.svg)](https://github.com/nitishagar/sober-ai/releases)
+[![Version](https://img.shields.io/badge/version-0.3.0-orange.svg)](https://github.com/nitishagar/sober-ai/releases)
+[![CI](https://github.com/nitishagar/sober-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/nitishagar/sober-ai/actions/workflows/ci.yml)
 
 ![sober-ai(2)](https://github.com/user-attachments/assets/ae07e349-880c-49fe-812b-8f1063abf593)
 
-**Lighthouse for the AI Age** - A comprehensive website auditing tool specifically designed to evaluate and optimize websites for AI agent interactions.
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Quick Start](#quick-start)
-- [Architecture](#architecture)
-- [Usage](#usage)
-- [Testing](#testing)
-- [Performance](#performance)
-- [Troubleshooting](#troubleshooting)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
-- [Support](#support)
+**Lighthouse for the AI Age** - A free, open-source website auditing tool that evaluates and optimizes websites for AI agent interactions.
 
 ## Overview
 
-SoberAI Optimizer is the first specialized tool for ensuring your website works perfectly with AI agents, LLMs, and autonomous browsing systems. With 1 billion+ monthly AI crawler requests (GPTBot, ClaudeBot, PerplexityBot), optimizing for AI visibility is no longer optional.
+With 1 billion+ monthly AI crawler requests (GPTBot, ClaudeBot, PerplexityBot), optimizing for AI visibility is no longer optional. SoberAI is the first specialized tool for ensuring your website works perfectly with AI agents, LLMs, and autonomous browsing systems.
 
-### Key Features
+### What It Audits
 
-- **SSR Detection (25% weight)** - Critical for AI agents that don't execute JavaScript
-- **Schema.org Coverage (20%)** - Structured data for AI understanding
-- **Semantic HTML Analysis (20%)** - Proper content hierarchy and structure
-- **Content Extractability (20%)** - Optimized for LLM comprehension
-- **AI-Powered Recommendations** - Using Qwen3 4B for actionable insights
+| Category | Weight | Description |
+|----------|--------|-------------|
+| SSR Readiness | 25% | Server-side rendering for AI agents that don't execute JavaScript |
+| Schema Coverage | 20% | Structured data (Schema.org) for AI understanding |
+| Semantic Structure | 20% | HTML5 semantic elements and heading hierarchy |
+| Content Extractability | 20% | Text readability and accessibility for LLMs |
+
+AI-powered recommendations are generated using your choice of LLM provider (Ollama or OpenAI).
 
 ## Quick Start
 
-### Prerequisites
+### Option 1: Desktop App
 
-- Node.js 20+
-- Docker Desktop with Docker Compose
-- 8GB+ RAM available
-- macOS (ARM/Intel) or Linux
+Download the latest release for your platform from the [Releases page](https://github.com/nitishagar/sober-ai/releases).
 
-### Unified Local Development Setup
-
-The easiest way to get started is using the unified Docker Compose setup that includes all services (PostgreSQL, Redis, Ollama, Backend, Frontend):
-
-1. **Clone and Install**
+### Option 2: From Source
 
 ```bash
+# Clone and install
 git clone https://github.com/nitishagar/sober-ai.git
 cd sober-ai
 npm install
+
+# Build frontend
+cd frontend && npm install && npm run build && cd ..
+
+# Set up database
+npx prisma generate --schema=src/db/schema.prisma
+npx prisma migrate deploy --schema=src/db/schema.prisma
+
+# Start the server
+node src/api/server.js
+# Open http://localhost:3000
 ```
 
-2. **Start All Services**
+### Option 3: Electron Development
 
 ```bash
-# Start unified Docker environment (database, Redis, Ollama, backend, frontend)
-npm run local:start
-
-# This will:
-# - Start PostgreSQL database
-# - Start Redis cache
-# - Start Ollama with automatic Qwen3 4B model download (~2.5GB, first time only)
-# - Run database migrations
-# - Start backend API with hot-reload
-# - Start frontend with hot-reload
+npm run electron:dev
 ```
 
-3. **Access the Application**
+### LLM Setup (Optional)
 
-- **Web UI**: http://localhost:5173
-- **API**: http://localhost:3001/api
-- **API Health**: http://localhost:3001/api/health
-- **Ollama**: http://localhost:11434
-
-4. **Verify Installation**
+For AI-powered recommendations, install [Ollama](https://ollama.com) and pull a model:
 
 ```bash
-# Check all services are running
-npm run local:ps
-
-# Check logs
-npm run local:logs
-
-# Test API health
-curl http://localhost:3001/api/health
-
-# Test audit endpoint
-curl -X POST http://localhost:3001/api/audits \
-  -H "Content-Type: application/json" \
-  -d '{"url":"https://vercel.com"}'
+ollama pull qwen3:4b
 ```
 
-5. **Stop Services**
-
-```bash
-# Stop all services
-npm run local:stop
-```
-
-### Alternative: Development Setup
-
-For development without Docker (requires manual PostgreSQL, Redis, Ollama setup):
-
-```bash
-# Install dependencies
-npm install
-
-# Start frontend dev server
-npm run dev
-
-# Start backend API
-npm start
-```
-
-## Architecture
-
-### Technology Stack
-
-- **Runtime**: Node.js 20+ (ARM-optimized)
-- **Framework**: Express.js
-- **Browser Automation**: Playwright
-- **LLM**: Qwen3 4B via Ollama
-- **Configuration**: YAML
-- **Testing**: Jest + Playwright Test
-
-### Project Structure
-
-```
-sober-ai/
-├── src/
-│   ├── api/                  # Express API server
-│   │   ├── routes/          # API endpoints (Phase 1 + Phase 2)
-│   │   ├── middleware/      # Auth + error handling
-│   │   └── server.js        # Main entry point
-│   ├── core/                # Core orchestration
-│   │   ├── auditor.js       # Main audit coordinator
-│   │   └── scorer.js        # Weighted scoring
-│   ├── gatherers/           # Data collection
-│   │   ├── ssr-detection.js
-│   │   ├── structured-data.js
-│   │   ├── semantic-html.js
-│   │   └── content-analysis.js
-│   ├── audits/              # Evaluation logic
-│   │   ├── ssr-readiness.audit.js
-│   │   ├── schema-coverage.audit.js
-│   │   ├── semantic-structure.audit.js
-│   │   └── content-extractability.audit.js
-│   ├── llm/                 # LLM integration
-│   │   ├── analyzer.js
-│   │   └── prompts/
-│   ├── db/                  # Database (Prisma)
-│   │   ├── schema.prisma   # Database schema
-│   │   ├── migrations/      # Migration files
-│   │   └── seed.js          # Seed data
-│   ├── services/            # Business logic services
-│   │   ├── authService.js
-│   │   └── reportService.js
-│   ├── queue/               # Bull queue jobs
-│   ├── ui/                  # Phase 1 web interface
-│   │   └── public/
-│   ├── config/              # YAML configuration
-│   └── utils/               # Shared utilities
-├── frontend/                # Phase 2 React UI
-│   ├── src/
-│   ├── public/
-│   ├── package.json
-│   └── vite.config.js
-├── docker/                  # Docker configuration
-├── tests/                   # Test suites
-└── docs/                    # Documentation
-```
+Or configure OpenAI in Settings with your API key.
 
 ## Usage
 
-### Web UI
+1. Navigate to the **Audit** page
+2. Enter a URL (e.g., `https://vercel.com`)
+3. Click **Run Audit** and watch real-time progress
+4. Review scores, findings, and AI recommendations
+5. Configure your LLM provider in **Settings**
 
-1. Navigate to http://localhost:3000
-2. Enter a website URL (e.g., https://vercel.com)
-3. Click "Run AI Agent Audit"
-4. Review results (~15-20 seconds)
-5. Download JSON report if needed
+## Architecture
 
-### API Usage
-
-#### Single URL Audit
-
-```bash
-curl -X POST http://localhost:3000/api/audit \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://example.com"
-  }'
+```
+Electron Shell
+├── React Frontend (BrowserWindow)
+├── Express.js Backend (in-process)
+├── SQLite Database (Prisma ORM)
+├── Playwright (browser automation)
+└── LLM Provider (Ollama local/cloud or OpenAI)
 ```
 
-Response:
-```json
-{
-  "id": "uuid",
-  "url": "https://example.com",
-  "timestamp": "2025-10-02T...",
-  "duration": 18543,
-  "scores": {
-    "overall": 85,
-    "grade": "B",
-    "categories": {
-      "ssrReadiness": { "score": 90, "severity": "pass" },
-      "schemaCoverage": { "score": 75, "severity": "pass" },
-      "semanticStructure": { "score": 88, "severity": "pass" },
-      "contentExtractability": { "score": 82, "severity": "pass" }
-    }
-  },
-  "auditResults": { ... },
-  "recommendations": { ... },
-  "metadata": {
-    "detectedIndustry": "saas",
-    "totalSchemas": 5,
-    "ssrEnabled": true
-  }
-}
-```
+### Key Technologies
 
-#### Get Audit Result
-
-```bash
-curl http://localhost:3000/api/audit/{id}
-```
-
-### Configuration
-
-Edit `src/config/audits.yaml` to customize:
-
-- Audit weights (must sum to 100)
-- Scoring thresholds
-- Industry detection rules
-- Output formats
-
-Edit `src/config/models.yaml` to customize:
-
-- LLM model settings
-- Temperature, top_p parameters
-- Timeout and performance settings
+- **Desktop**: Electron
+- **Backend**: Express.js + Node.js 22+
+- **Frontend**: React + Vite
+- **Database**: SQLite via Prisma
+- **Browser**: Playwright
+- **LLM**: Ollama (local/cloud) or OpenAI
 
 ## Testing
 
-### Run Tests
-
 ```bash
-# All tests
-npm test
-
-# Watch mode
-npm run test:watch
-
-# With coverage
-npm test -- --coverage
+npm test          # Run all tests
+npm run verify    # Run tests + lint
 ```
 
-### Manual Testing
+## Documentation
 
-Test with known websites:
+Full documentation available at [nitishagar.github.io/sober-ai](https://nitishagar.github.io/sober-ai).
 
-- **SSR Excellence**: https://vercel.com (Next.js)
-- **Schema Excellence**: https://shopify.com
-- **Poor SSR**: https://youtube.com (SPA)
-
-## Performance
-
-### Expected Metrics
-
-- **Audit Time**: 15-20 seconds per URL
-- **SSR Detection**: ~10 seconds
-- **LLM Analysis**: ~10 seconds (per failing audit)
-- **Memory Usage**: ~2GB (app) + ~5GB (Ollama)
-- **Concurrent Capacity**: 1-2 audits (Phase 1)
-
-### Optimization Tips
-
-- LLM recommendations only generated for failing audits
-- Gatherers run in parallel where possible
-- Single browser instance reused per audit
-- In-memory results cache (last 100 audits)
-
-## Troubleshooting
-
-### Ollama Service Not Starting
-
-```bash
-# Check logs
-npm run local:logs
-
-# Or check Ollama specifically
-docker logs sober-ollama-local
-
-# Verify model is downloaded
-docker exec sober-ollama-local ollama list
-
-# Verify model is working
-curl http://localhost:11434/api/tags
-```
-
-### Playwright Browser Issues
-
-```bash
-# Install system dependencies (Linux)
-npx playwright install-deps chromium
-
-# Use bundled Chromium (already configured in Dockerfile)
-```
-
-### Memory Issues on ARM Macs
-
-If experiencing OOM kills:
-- Close other memory-intensive applications
-- Increase Docker memory limit to 10GB+
-- Consider using smaller model (though not recommended)
-
-## Development
-
-### Code Style
-
-```bash
-# Lint code
-npm run lint
-
-# Format code
-npm run format
-```
-
-### Hot Reload
-
-```bash
-# Uses nodemon for automatic restart on file changes
-npm run dev
-```
-
-## Deployment
-
-### Docker Production Build
-
-```bash
-# Build production image
-npm run docker:build
-
-# Start production containers
-docker-compose -f docker/docker-compose.yml up -d
-```
-
-### Environment Variables
-
-```bash
-PORT=3000
-NODE_ENV=production
-OLLAMA_ENDPOINT=http://ollama:11434
-LOG_LEVEL=info
-```
-
-## Roadmap
-
-### Phase 1 (Current) ✅
-- Core audit engine
-- 4 primary audits
-- LLM-powered recommendations
-- Minimal web UI
-- Docker deployment
-
-### Phase 2 (Planned)
-- Redis queue for batch processing
-- Report persistence (database)
-- API rate limiting
-- Enhanced error handling
-- Comprehensive monitoring
-
-### Phase 3 (Planned)
-- Chrome extension
-- CLI tool
-- Advanced caching
-- Multiple LLM providers
-
-### Phase 4 (Planned)
-- User authentication
-- Team collaboration
-- API keys and quotas
-- White-label options
+- [Installation Guide](https://nitishagar.github.io/sober-ai/#/getting-started/installation)
+- [Quick Start](https://nitishagar.github.io/sober-ai/#/getting-started/quick-start)
+- [LLM Configuration](https://nitishagar.github.io/sober-ai/#/guide/llm-configuration)
+- [API Reference](https://nitishagar.github.io/sober-ai/#/API)
+- [Architecture](https://nitishagar.github.io/sober-ai/#/ARCHITECTURE)
 
 ## Contributing
 
-We welcome contributions from the community! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
-
-- Development setup
-- Code style and standards
-- Testing requirements
-- Pull request process
-- Code of Conduct
-
-Before contributing, please read:
-- [Code of Conduct](CODE_OF_CONDUCT.md)
-- [Architecture Documentation](docs/ARCHITECTURE.md)
-- [API Documentation](docs/API.md)
+We welcome contributions! See the [Contributing Guide](https://nitishagar.github.io/sober-ai/#/contributing) for development setup and guidelines.
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) for details.
+
+Copyright 2025-2026 Nitish Agarwal
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/nitishagar/sober-ai/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/nitishagar/sober-ai/discussions)
-- **Security**: Report vulnerabilities via [Security Advisories](https://github.com/nitishagar/sober-ai/security/advisories/new)
-- **Documentation**:
-  - [API Documentation](docs/API.md)
-  - [Architecture Guide](docs/ARCHITECTURE.md)
-  - [Contributing Guidelines](CONTRIBUTING.md)
-  - [Security Policy](SECURITY.md)
-
-## Credits
-
-Built with insights from:
-- Lighthouse architecture (Google Chrome)
-- AI crawler behavior research
-- Schema.org best practices
-- Community feedback from AI/web dev communities
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+- [GitHub Issues](https://github.com/nitishagar/sober-ai/issues)
+- [GitHub Discussions](https://github.com/nitishagar/sober-ai/discussions)
+- [Documentation](https://nitishagar.github.io/sober-ai)
 
 ---
 
-**Version 0.2.0** - Last updated: 2025-11-01
+**Version 0.3.0** | [Changelog](https://nitishagar.github.io/sober-ai/#/changelog)

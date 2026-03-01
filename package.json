@@ -1,13 +1,13 @@
 {
   "name": "sober-ai-optimizer",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "AI Agent Website Optimizer - Lighthouse for the AI Age. Evaluate and optimize websites for AI agent interactions with comprehensive audits and LLM-powered recommendations.",
   "main": "src/electron/main.js",
   "author": {
     "name": "Nitish Agarwal",
     "email": "nitishagar@gmail.com"
   },
-  "license": "Apache-2.0",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/nitishagar/sober-ai.git"
