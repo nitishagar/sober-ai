@@ -5,68 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-01
+
+### Added
+- Electron desktop application for Linux, Windows, and macOS
+- Multi-provider LLM support (Ollama local/cloud, OpenAI)
+- Settings UI for LLM provider configuration and API keys
+- Provider abstraction layer (BaseProvider, OllamaProvider, OpenAIProvider)
+- Lighthouse-style circular score gauges with animated SVG
+- Real-time audit progress with SSE streaming and session reconnection
+- Docsify documentation site at nitishagar.github.io/sober-ai
+- GitHub Actions CI/CD (tests, Electron builds, docs deployment)
+- Connection testing for LLM providers
+
+### Changed
+- Switched from PostgreSQL to SQLite for zero-config local storage
+- Migrated from Docker-first to Electron desktop-first architecture
+- License changed from Apache 2.0 to MIT
+- Completely free with no sign-up required
+
+### Removed
+- User authentication (JWT, bcrypt)
+- PostgreSQL and Redis dependencies
+- Rate limiting and usage tracking
+- Docker as primary deployment method
+
 ## [0.2.1] - 2025-11-01
 
 ### Changed
 - **BREAKING**: Consolidated `backend/src/` into `src/` for cleaner project structure
 - Updated all import paths to use unified source directory
-- Updated Docker configuration to reflect new structure
-- Prisma schema now located at `src/db/schema.prisma` (was `backend/src/db/schema.prisma`)
-- All npm scripts updated to reference `src/` instead of `backend/src/`
-- Updated README project structure documentation to match actual implementation
-
-### Migration Guide
-If you have an existing local development environment:
-1. Pull latest changes: `git pull`
-2. Remove old dependencies: `rm -rf node_modules`
-3. Reinstall dependencies: `npm install`
-4. Regenerate Prisma client: `npm run db:generate`
-5. Rebuild Docker images: `docker-compose -f docker-compose.local.yml build`
-6. Restart services: `npm run local:stop && npm run local:start`
-
-## [Unreleased]
-
-### Added
-- Full Docker Compose setup for one-command local development
-- Comprehensive project documentation
-  - CONTRIBUTING.md with contribution guidelines
-  - CODE_OF_CONDUCT.md for community standards
-  - SECURITY.md for vulnerability reporting
-  - docs/ARCHITECTURE.md with system architecture details
-- Unified docker-compose.local.yml with all services
-- Automatic Ollama model download on first startup
-- Health check endpoint at /api/health
-
-### Changed
-- Improved documentation structure and completeness
-- Updated health endpoint to /api/health with service status
-- Enhanced local development workflow with npm scripts
-
-### Fixed
-- Removed hardcoded personal paths for portability
+- Prisma schema now located at `src/db/schema.prisma`
 
 ## [0.2.0] - 2025-10-31
 
 ### Added
-- User authentication with JWT
-- PostgreSQL database for persistence
-- Redis queue system for async processing
-- Audit session management
-- Frontend UI with React and Vite
 - Real-time progress updates via Server-Sent Events (SSE)
-- User registration and login
-- Protected audit endpoints
+- Frontend UI with React and Vite
+- Audit session management
 - Database migrations with Prisma
 
 ### Changed
 - Migrated from in-memory to database storage
 - Enhanced error handling and logging
-- Improved API structure with authentication
-
-### Security
-- Implemented JWT-based authentication
-- Added bcrypt password hashing
-- Environment-based configuration for secrets
 
 ## [0.1.0] - 2025-10-02
 
@@ -77,8 +58,7 @@ If you have an existing local development environment:
 - Schema.org coverage analysis
 - Semantic HTML structure evaluation
 - Content extractability scoring
-- LLM-powered recommendations using Qwen3 4B via Ollama
-- Docker deployment support
+- LLM-powered recommendations using Ollama
 - Basic web UI for audit submission
 - REST API for programmatic access
 - Weighted scoring system
@@ -86,11 +66,11 @@ If you have an existing local development environment:
 - YAML-based configuration
 
 ### Technical
-- Node.js 20+ support
+- Node.js 22+ support
 - Playwright for browser automation
 - Express.js API server
-- ARM-optimized containers
 
-[Unreleased]: https://github.com/nitishagar/sober-ai/compare/v0.2.0...HEAD
+[0.3.0]: https://github.com/nitishagar/sober-ai/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/nitishagar/sober-ai/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/nitishagar/sober-ai/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/nitishagar/sober-ai/releases/tag/v0.1.0

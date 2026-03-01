@@ -14,19 +14,28 @@ Thank you for your interest in contributing! This document provides guidelines f
 ## Getting Started
 
 ### Prerequisites
-- Node.js 20+
-- Docker Desktop
-- 8GB+ RAM available
+- Node.js 22+
 - Git
+- [Ollama](https://ollama.com) (optional, for LLM recommendations)
 
 ### Development Setup
 
 1. Fork the repository
 2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/sober-ai.git`
 3. Add upstream remote: `git remote add upstream https://github.com/nitishagar/sober-ai.git`
-4. Start local development: `npm run local:start`
-5. Wait for all services to be healthy (2-3 min first run)
-6. Access frontend at http://localhost:5173
+4. Install dependencies:
+   ```bash
+   npm install
+   cd frontend && npm install && cd ..
+   ```
+5. Set up the database:
+   ```bash
+   npx prisma generate --schema=src/db/schema.prisma
+   npx prisma migrate deploy --schema=src/db/schema.prisma
+   ```
+6. Start the development server: `npm run dev`
+7. In a separate terminal, start the frontend: `cd frontend && npm run dev`
+8. Access frontend at http://localhost:5173
 
 ### Project Structure
 
@@ -36,10 +45,12 @@ Key directories:
 - `src/core/` - Main audit orchestration
 - `src/gatherers/` - Data collection modules
 - `src/audits/` - Evaluation logic
-- `src/llm/` - LLM integration
-- `backend/` - API server and database
-- `frontend/` - React UI
-- `docker/` - Docker configuration
+- `src/llm/` - LLM integration and provider abstraction
+- `src/api/` - Express.js API server and routes
+- `src/db/` - Prisma schema and migrations
+- `src/electron/` - Electron main process
+- `frontend/` - React UI (Vite)
+- `docs/` - Docsify documentation
 
 ## Code Style
 
@@ -84,9 +95,9 @@ Watch mode:
 npm run test:watch
 ```
 
-With coverage:
+Full verification (tests + lint):
 ```bash
-npm test -- --coverage
+npm run verify
 ```
 
 ### Test Coverage Requirements
@@ -115,11 +126,10 @@ describe('scorer', () => {
 1. Create a feature branch: `git checkout -b feature/your-feature-name`
 2. Make your changes
 3. Add tests for new functionality
-4. Run linting: `npm run lint`
-5. Run tests: `npm test`
-6. Commit with clear messages
-7. Push to your fork
-8. Open a pull request
+4. Run verification: `npm run verify`
+5. Commit with clear messages
+6. Push to your fork
+7. Open a pull request
 
 ### PR Requirements
 
@@ -156,7 +166,7 @@ Include:
 - Clear description
 - Steps to reproduce
 - Expected vs actual behavior
-- Environment (OS, Node version, Docker version)
+- Environment (OS, Node version, app version)
 - Relevant logs
 
 ### Feature Requests
@@ -183,50 +193,34 @@ Include:
 
 ## Development Workflow
 
-### Daily Workflow
-
-Start services:
-```bash
-npm run local:start
-```
-
-View logs:
-```bash
-npm run local:logs
-```
-
-Stop services:
-```bash
-npm run local:stop
-```
-
-### Hot Reload
-
-Both frontend and backend support hot reload:
-- Frontend: Vite HMR updates instantly
-- Backend: Nodemon restarts on file changes
-
 ### Database Changes
 
-After modifying schema:
+After modifying the Prisma schema:
 ```bash
-npx prisma migrate dev --schema=backend/src/db/schema.prisma
-npx prisma generate --schema=backend/src/db/schema.prisma
+npx prisma migrate dev --schema=src/db/schema.prisma
+npx prisma generate --schema=src/db/schema.prisma
+```
+
+### Running the Electron App
+
+```bash
+# Build frontend first
+cd frontend && npm run build && cd ..
+
+# Launch Electron
+npm run electron:dev
 ```
 
 ## Getting Help
 
 - **GitHub Issues**: Bug reports and features
 - **GitHub Discussions**: Questions and ideas
-- **Documentation**: docs/ directory
-- **Architecture**: docs/ARCHITECTURE.md
-- **Streaming**: docs/STREAMING_ARCHITECTURE.md
+- **Documentation**: [nitishagar.github.io/sober-ai](https://nitishagar.github.io/sober-ai)
 
 ## Recognition
 
 Contributors are recognized in:
 - GitHub contributors page
 - CHANGELOG.md for significant contributions
-- Social media announcements for major features
 
 Thank you for contributing to SoberAI Optimizer!

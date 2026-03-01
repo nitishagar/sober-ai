@@ -6,8 +6,8 @@ We release patches for security vulnerabilities. Currently supported versions:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.2.x   | :white_check_mark: |
-| < 0.2   | :x:                |
+| 0.3.x   | :white_check_mark: |
+| < 0.3   | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -44,44 +44,35 @@ Instead:
 
 ## Security Best Practices
 
-### For Self-Hosted Installations
+### For Desktop App Users
 
-1. Use strong database passwords
-2. Change default JWT_SECRET
-3. Enable HTTPS in production
-4. Keep dependencies updated
-5. Run behind a reverse proxy
-6. Use firewall rules
-7. Regular backups
+1. Keep the application updated to the latest version
+2. Store API keys securely (the app encrypts them locally)
+3. Keep dependencies updated: `npm audit fix`
+4. Only enter API keys from trusted LLM providers
 
-### Environment Variables
+### For Contributors
 
 Never commit:
 - .env files
-- Credentials
-- API keys
-- Certificates
-
-Use:
-- Strong random secrets: `openssl rand -base64 32`
-- Different secrets per environment
-- Rotate secrets regularly
+- Credentials or API keys
+- Certificates or private keys
 
 ## Known Security Considerations
 
-### Ollama Model Access
+### LLM API Keys
 
-The Ollama service has access to website content. Ensure:
-- Network isolation if processing sensitive sites
-- Review model's data retention policies
-- Consider local deployment for sensitive use cases
+API keys for Ollama Cloud and OpenAI are stored locally using electron-store with encryption. Keys are:
+- Never transmitted except to the configured LLM provider
+- Stored in the user's app data directory
+- Not included in audit reports or logs
 
 ### Playwright Browser
 
-Playwright visits external websites:
-- Runs in sandboxed containers
+Playwright visits external websites during audits:
+- Runs in isolated browser contexts per audit
 - No persistent storage of credentials
-- Isolated browser contexts per audit
+- Sandboxed execution environment
 
 ## Security Updates
 
@@ -89,10 +80,6 @@ Subscribe to security advisories:
 - GitHub Security Advisories
 - Watch this repository
 - Check CHANGELOG.md regularly
-
-## Vulnerability History
-
-See CHANGELOG.md for security fixes in past releases.
 
 ## Contact
 

@@ -5,7 +5,7 @@ const logger = require('../../utils/logger');
 
 const router = express.Router();
 
-// In-memory batch job storage (Phase 1)
+// In-memory batch job storage
 const batchJobs = new Map();
 
 // POST /api/batch - Submit batch audit job
@@ -47,9 +47,6 @@ router.post('/', async (req, res) => {
       message: 'Batch job queued. Check status at /api/status/:jobId',
       statusUrl: `/api/status/${jobId}`
     });
-
-    // Note: In Phase 1, we don't actually process batch jobs
-    // This would require a proper queue system (Redis + Bull) in Phase 2
 
   } catch (error) {
     logger.error('Batch job creation failed:', error);

@@ -1,14 +1,14 @@
 {
   "name": "sober-ai-frontend",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Frontend application for Sober AI - AI Agent Website Optimizer",
   "type": "module",
   "author": {
     "name": "Nitish Agarwal",
     "email": "nitishagar@gmail.com"
   },
-  "license": "Apache-2.0",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/nitishagar/sober-ai.git",

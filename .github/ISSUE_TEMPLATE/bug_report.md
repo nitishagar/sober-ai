@@ -27,11 +27,10 @@ What actually happened.
 
 ## Environment
 
-- OS: [e.g., macOS 13.0, Ubuntu 22.04]
-- Node.js version: [e.g., 20.10.0]
-- Docker version: [e.g., 24.0.6]
-- Project version: [e.g., 0.2.0]
-- Installation method: [e.g., Docker Compose, manual]
+- OS: [e.g., macOS 14.0, Ubuntu 24.04, Windows 11]
+- Node.js version: [e.g., 22.0.0]
+- Project version: [e.g., 0.3.0]
+- Installation method: [e.g., Desktop app, from source]
 
 ## Logs
 

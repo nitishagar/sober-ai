@@ -17,6 +17,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npx prisma generate --schema=src/db/schema.prisma
       - run: npm test
       - name: Build frontend
         run: cd frontend && npm ci && npm run build
