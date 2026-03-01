@@ -1,0 +1,12 @@
+- [Home](/)
+- Getting Started
+  - [Installation](getting-started/installation.md)
+  - [Quick Start](getting-started/quick-start.md)
+- User Guide
+  - [Running Audits](guide/running-audits.md)
+  - [LLM Configuration](guide/llm-configuration.md)
+  - [Understanding Results](guide/understanding-results.md)
+- [API Reference](API.md)
+- [Architecture](ARCHITECTURE.md)
+- [Contributing](contributing.md)
+- [Changelog](changelog.md)
