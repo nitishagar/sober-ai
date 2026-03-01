@@ -91,6 +91,13 @@
   color: var(--primary-color, #0066cc);
 }
 
+.progress-timing {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
 .audit-info {
   padding: 20px;
 }

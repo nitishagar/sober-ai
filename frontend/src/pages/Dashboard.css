@@ -25,6 +25,13 @@
   padding: 20px;
 }
 
+.stat-card-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
 .stat-label {
   font-size: 12px;
   margin-bottom: 8px;
@@ -36,32 +43,58 @@
   font-family: var(--font-mono);
 }
 
+/* Grade distribution bars */
 .grade-distribution {
   padding: 20px;
 }
 
-.grades {
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.grade-item {
+.grade-bars {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
-.grade-label {
+.grade-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.grade-bar-label {
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
+  width: 16px;
+  text-align: center;
 }
 
-.grade-count {
+.grade-bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.grade-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+}
+
+.grade-bar-a { background: var(--score-green); }
+.grade-bar-b { background: #66bb6a; }
+.grade-bar-c { background: var(--score-orange); }
+.grade-bar-d { background: #ff7043; }
+.grade-bar-f { background: var(--score-red); }
+
+.grade-bar-count {
   font-size: 12px;
+  width: 24px;
+  text-align: right;
 }
 
+/* Recent reports */
 .recent-reports {
   padding: 20px;
 }
@@ -97,19 +130,13 @@
   gap: 16px;
 }
 
-.score {
+.report-score {
   font-family: var(--font-mono);
   font-weight: 600;
   padding: 4px 8px;
   border-radius: 3px;
   font-size: 12px;
 }
-
-.score-a { background: #e6f4ea; color: var(--success); }
-.score-b { background: #fef7e0; color: var(--warning); }
-.score-c { background: #fce8e6; color: var(--error); }
-.score-d { background: #fce8e6; color: var(--error); }
-.score-f { background: #fce8e6; color: var(--error); }
 
 .report-date {
   font-size: 11px;

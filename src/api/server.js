@@ -6,8 +6,6 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 
 // Import routes
-// Phase 2 MVP routes (with auth and streaming)
-const authRouter = require('./routes/auth');
 const auditProgressRouter = require('./routes/audit-progress');
 const mvpAuditRouter = require('./routes/audit-mvp');
 const reportsRouter = require('./routes/reports');
@@ -68,17 +66,15 @@ app.get('/api/health', (req, res) => {
     version: '0.2.0',
     services: {
       database: process.env.DATABASE_URL ? 'connected' : 'not configured',
-      redis: process.env.REDIS_URL ? 'connected' : 'not configured',
       ollama: process.env.OLLAMA_ENDPOINT ? 'connected' : 'not configured'
     }
   });
 });
 
-// Phase 2 MVP routes (with authentication and streaming)
-app.use('/api/auth', authRouter);
+// API routes
 app.use('/api/audit-progress', auditProgressRouter); // SSE streaming audit
-app.use('/api/mvp/audit', mvpAuditRouter); // Authenticated audit
-app.use('/api/reports', reportsRouter); // Report management
+app.use('/api/mvp/audit', mvpAuditRouter);
+app.use('/api/reports', reportsRouter);
 
 // Phase 1 routes (legacy, backward compatibility, no auth)
 app.use('/api/audit', auditRouter); // Simple audit, no auth
@@ -103,7 +99,6 @@ const server = app.listen(PORT, () => {
   logger.info(`SoberAI Optimizer API server running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info(`Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
-  logger.info(`Redis: ${process.env.REDIS_URL ? 'Connected' : 'Not configured'}`);
   logger.info(`Ollama endpoint: ${process.env.OLLAMA_ENDPOINT || 'http://localhost:11434'}`);
 });
 

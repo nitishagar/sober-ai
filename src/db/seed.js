@@ -1,57 +1,23 @@
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('[Seed] Starting database seed...');
+  console.log('[Seed] Seeding default settings...');
 
-  // Create test user
-  const hashedPassword = await bcrypt.hash('testpassword123', 10);
-
-  const testUser = await prisma.user.upsert({
-    where: { email: 'test@soberai.com' },
+  await prisma.settings.upsert({
+    where: { key: 'llm_provider' },
     update: {},
-    create: {
-      email: 'test@soberai.com',
-      password: hashedPassword,
-      name: 'Test User',
-      company: 'SoberAI Test',
-      role: 'USER',
-      plan: 'FREE',
-      emailVerified: true,
-      isActive: true
-    }
+    create: { key: 'llm_provider', value: 'ollama_local' }
   });
 
-  console.log('[Seed] Created test user:', testUser.email);
-
-  // Create admin user
-  const adminPassword = await bcrypt.hash('admin123', 10);
-
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@soberai.com' },
+  await prisma.settings.upsert({
+    where: { key: 'ollama_endpoint' },
     update: {},
-    create: {
-      email: 'admin@soberai.com',
-      password: adminPassword,
-      name: 'Admin User',
-      role: 'ADMIN',
-      plan: 'ENTERPRISE',
-      emailVerified: true,
-      isActive: true
-    }
+    create: { key: 'ollama_endpoint', value: 'http://localhost:11434' }
   });
 
-  console.log('[Seed] Created admin user:', adminUser.email);
-
-  console.log('[Seed] Database seeded successfully!');
-  console.log('\nTest credentials:');
-  console.log('  Email: test@soberai.com');
-  console.log('  Password: testpassword123');
-  console.log('\nAdmin credentials:');
-  console.log('  Email: admin@soberai.com');
-  console.log('  Password: admin123');
+  console.log('[Seed] Done.');
 }
 
 main()

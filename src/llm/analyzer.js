@@ -75,10 +75,6 @@ class LLMAnalyzer {
           throw new Error('recommendations array must contain at least one item');
         }
 
-        if (value.length !== 3) {
-          throw new Error('recommendations array must contain exactly three items');
-        }
-
         return value.map((rec, index) => {
           const requiredFields = ['priority', 'title', 'impact', 'effort', 'description'];
           for (const field of requiredFields) {

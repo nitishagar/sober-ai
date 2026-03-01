@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getScoreColorHex, getScoreClass } from '../utils/scoreUtils';
 import './Reports.css';
 
 export default function Reports() {
@@ -9,13 +10,10 @@ export default function Reports() {
   const [search, setSearch] = useState('');
 
   const fetchReports = (page = 1) => {
-    const token = localStorage.getItem('token');
     const params = new URLSearchParams({ page, limit: 20 });
     if (search) params.append('search', search);
 
-    fetch(`/api/reports?${params}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    fetch(`/api/reports?${params}`)
       .then(res => res.json())
       .then(data => {
         setReports(data.reports || []);
@@ -32,10 +30,8 @@ export default function Reports() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this report?')) return;
 
-    const token = localStorage.getItem('token');
     const res = await fetch(`/api/reports/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
+      method: 'DELETE'
     });
 
     if (res.ok) {
@@ -88,9 +84,19 @@ export default function Reports() {
             {reports.map(report => (
               <div key={report.id} className="table-row">
                 <div className="text-mono">{report.url}</div>
-                <div>{report.overallScore}</div>
                 <div>
-                  <span className={`grade-badge grade-${report.grade.toLowerCase()}`}>
+                  <span
+                    className="score-badge"
+                    style={{
+                      color: getScoreColorHex(report.overallScore),
+                      background: `${getScoreColorHex(report.overallScore)}15`
+                    }}
+                  >
+                    {report.overallScore}
+                  </span>
+                </div>
+                <div>
+                  <span className={`grade-badge grade-${getScoreClass(report.overallScore)}`}>
                     {report.grade}
                   </span>
                 </div>

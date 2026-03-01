@@ -29,6 +29,11 @@ Thumbs.db
 # Build
 dist/
 build/
+dist-electron/
+
+# SQLite
+*.db
+*.db-journal
 
 # Docker
 docker-compose.override.yml

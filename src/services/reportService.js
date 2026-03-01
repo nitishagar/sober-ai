@@ -3,12 +3,11 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class ReportService {
-  async createReport(userId, auditResult) {
-    console.log(`[Reports] Creating report for user ${userId}, URL: ${auditResult.url}`);
+  async createReport(auditResult) {
+    console.log(`[Reports] Creating report for URL: ${auditResult.url}`);
 
     const report = await prisma.report.create({
       data: {
-        userId,
         url: auditResult.url,
         overallScore: auditResult.scores.overall,
         grade: auditResult.scores.grade,
@@ -18,26 +17,22 @@ class ReportService {
         contentScore: auditResult.auditResults.contentExtractability.score,
         detectedIndustry: auditResult.metadata.detectedIndustry,
         duration: auditResult.duration,
-        auditResults: auditResult.auditResults,
-        recommendations: auditResult.recommendations || null
+        auditResults: JSON.stringify(auditResult.auditResults),
+        recommendations: auditResult.recommendations ? JSON.stringify(auditResult.recommendations) : null
       }
     });
 
     return report;
   }
 
-  async getReports(userId, options = {}) {
+  async getReports(options = {}) {
     const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc', search } = options;
 
-    const where = {
-      userId,
-      ...(search && {
-        url: {
-          contains: search,
-          mode: 'insensitive'
-        }
-      })
-    };
+    const where = search ? {
+      url: {
+        contains: search
+      }
+    } : {};
 
     const [reports, total] = await Promise.all([
       prisma.report.findMany({
@@ -69,27 +64,28 @@ class ReportService {
     };
   }
 
-  async getReport(reportId, userId) {
-    const report = await prisma.report.findFirst({
-      where: {
-        id: reportId,
-        userId
-      }
+  async getReport(reportId) {
+    const report = await prisma.report.findUnique({
+      where: { id: reportId }
     });
 
     if (!report) {
       throw new Error('Report not found');
     }
 
-    return report;
+    // Parse JSON strings back to objects
+    return {
+      ...report,
+      auditResults: typeof report.auditResults === 'string' ? JSON.parse(report.auditResults) : report.auditResults,
+      recommendations: report.recommendations && typeof report.recommendations === 'string'
+        ? JSON.parse(report.recommendations)
+        : report.recommendations
+    };
   }
 
-  async deleteReport(reportId, userId) {
-    const report = await prisma.report.findFirst({
-      where: {
-        id: reportId,
-        userId
-      }
+  async deleteReport(reportId) {
+    const report = await prisma.report.findUnique({
+      where: { id: reportId }
     });
 
     if (!report) {
@@ -100,19 +96,17 @@ class ReportService {
       where: { id: reportId }
     });
 
-    console.log(`[Reports] Report ${reportId} deleted by user ${userId}`);
+    console.log(`[Reports] Report ${reportId} deleted`);
   }
 
-  async getReportStats(userId) {
+  async getReportStats() {
     const [totalReports, avgScore, scoreDistribution] = await Promise.all([
-      prisma.report.count({ where: { userId } }),
+      prisma.report.count(),
       prisma.report.aggregate({
-        where: { userId },
         _avg: { overallScore: true }
       }),
       prisma.report.groupBy({
         by: ['grade'],
-        where: { userId },
         _count: { grade: true }
       })
     ]);
@@ -127,10 +121,10 @@ class ReportService {
     };
   }
 
-  async compareReports(reportId1, reportId2, userId) {
+  async compareReports(reportId1, reportId2) {
     const [report1, report2] = await Promise.all([
-      this.getReport(reportId1, userId),
-      this.getReport(reportId2, userId)
+      this.getReport(reportId1),
+      this.getReport(reportId2)
     ]);
 
     return {

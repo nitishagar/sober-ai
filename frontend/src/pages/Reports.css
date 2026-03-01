@@ -72,11 +72,17 @@
   display: inline-block;
 }
 
-.grade-badge.grade-a { background: #e6f4ea; color: var(--success); }
-.grade-badge.grade-b { background: #fef7e0; color: var(--warning); }
-.grade-badge.grade-c { background: #fce8e6; color: var(--error); }
-.grade-badge.grade-d { background: #fce8e6; color: var(--error); }
-.grade-badge.grade-f { background: #fce8e6; color: var(--error); }
+.grade-badge.grade-good { background: var(--score-green-bg); color: var(--score-green); }
+.grade-badge.grade-average { background: var(--score-orange-bg); color: var(--score-orange); }
+.grade-badge.grade-poor { background: var(--score-red-bg); color: var(--score-red); }
+
+.score-badge {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+}
 
 .actions {
   display: flex;

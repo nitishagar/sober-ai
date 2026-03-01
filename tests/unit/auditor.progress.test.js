@@ -71,7 +71,7 @@ jest.mock('../../src/audits/content-extractability.audit', () => {
   return jest.fn().mockImplementation(() => ({ audit: jest.fn(() => auditResults.contentExtractability) }));
 });
 
-const llmAnalyzeMock = jest.fn(async (_result, _type, onProgress) => {
+const mockLlmAnalyze = jest.fn(async (_result, _type, onProgress) => {
   for (let i = 0; i < 10; i++) {
     onProgress('token');
   }
@@ -80,7 +80,7 @@ const llmAnalyzeMock = jest.fn(async (_result, _type, onProgress) => {
 
 jest.mock('../../src/llm/analyzer', () => {
   return jest.fn().mockImplementation(() => ({
-    analyze: llmAnalyzeMock
+    analyze: mockLlmAnalyze
   }));
 });
 
@@ -115,11 +115,11 @@ describe('Auditor progress callbacks', () => {
 
     const stepMessages = onStep.mock.calls.map((call) => call[0].message);
     expect(stepMessages).toContain('Analyzing server-side rendering...');
-    expect(stepMessages).toContain('Generating recommendations for ssrReadiness...');
+    expect(stepMessages).toContain('Generating 1 AI recommendations...');
 
     expect(onLLMToken).toHaveBeenCalled();
     expect(onLLMToken.mock.calls[0][0]).toBe('ssrReadiness');
-    expect(llmAnalyzeMock).toHaveBeenCalledTimes(1);
+    expect(mockLlmAnalyze).toHaveBeenCalledTimes(1);
   });
 
   it('maintains backwards compatibility with function progress callback signature', async () => {

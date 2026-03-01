@@ -1,18 +1,17 @@
 const express = require('express');
 const reportService = require('../../services/reportService');
-const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
 /**
  * GET /api/reports
- * List all reports for authenticated user
+ * List all reports
  */
-router.get('/', authenticate, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { page, limit, sortBy, sortOrder, search } = req.query;
 
-    const result = await reportService.getReports(req.user.id, {
+    const result = await reportService.getReports({
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 20,
       sortBy: sortBy || 'createdAt',
@@ -29,11 +28,11 @@ router.get('/', authenticate, async (req, res) => {
 
 /**
  * GET /api/reports/stats
- * Get report statistics for authenticated user
+ * Get report statistics
  */
-router.get('/stats', authenticate, async (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
-    const stats = await reportService.getReportStats(req.user.id);
+    const stats = await reportService.getReportStats();
     return res.json(stats);
   } catch (error) {
     console.error('[API] Failed to get stats:', error);
@@ -45,12 +44,11 @@ router.get('/stats', authenticate, async (req, res) => {
  * GET /api/reports/compare/:id1/:id2
  * Compare two reports
  */
-router.get('/compare/:id1/:id2', authenticate, async (req, res) => {
+router.get('/compare/:id1/:id2', async (req, res) => {
   try {
     const comparison = await reportService.compareReports(
       req.params.id1,
-      req.params.id2,
-      req.user.id
+      req.params.id2
     );
     return res.json(comparison);
   } catch (error) {
@@ -63,9 +61,9 @@ router.get('/compare/:id1/:id2', authenticate, async (req, res) => {
  * GET /api/reports/:reportId
  * Get full report details
  */
-router.get('/:reportId', authenticate, async (req, res) => {
+router.get('/:reportId', async (req, res) => {
   try {
-    const report = await reportService.getReport(req.params.reportId, req.user.id);
+    const report = await reportService.getReport(req.params.reportId);
     return res.json(report);
   } catch (error) {
     console.error('[API] Failed to get report:', error);
@@ -77,9 +75,9 @@ router.get('/:reportId', authenticate, async (req, res) => {
  * DELETE /api/reports/:reportId
  * Delete a report
  */
-router.delete('/:reportId', authenticate, async (req, res) => {
+router.delete('/:reportId', async (req, res) => {
   try {
-    await reportService.deleteReport(req.params.reportId, req.user.id);
+    await reportService.deleteReport(req.params.reportId);
     return res.json({ message: 'Report deleted' });
   } catch (error) {
     console.error('[API] Failed to delete report:', error);

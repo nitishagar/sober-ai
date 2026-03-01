@@ -1,17 +1,15 @@
 const express = require('express');
 const Auditor = require('../../core/auditor');
 const reportService = require('../../services/reportService');
-const authService = require('../../services/authService');
-const { authenticate, checkUsageLimit } = require('../middleware/auth');
 const { validateAuditRequest } = require('../../utils/validator');
 
 const router = express.Router();
 
 /**
  * POST /api/audit
- * Run a single URL audit (authenticated)
+ * Run a single URL audit
  */
-router.post('/', authenticate, checkUsageLimit, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     // Validate request
     const validation = validateAuditRequest(req.body);
@@ -24,17 +22,14 @@ router.post('/', authenticate, checkUsageLimit, async (req, res) => {
 
     const { url } = req.body;
 
-    console.log(`[API] Starting audit for: ${url} (user: ${req.user.email})`);
+    console.log(`[API] Starting audit for: ${url}`);
 
     // Run audit
     const auditor = new Auditor(req.config);
     const result = await auditor.audit(url);
 
     // Save report
-    const report = await reportService.createReport(req.user.id, result);
-
-    // Increment usage
-    await authService.incrementUsage(req.user.id);
+    const report = await reportService.createReport(result);
 
     console.log(`[API] Audit completed, report ID: ${report.id}`);
 
@@ -53,12 +48,10 @@ router.post('/', authenticate, checkUsageLimit, async (req, res) => {
  * GET /api/audit/:reportId
  * Retrieve a specific audit report
  */
-router.get('/:reportId', authenticate, async (req, res) => {
+router.get('/:reportId', async (req, res) => {
   try {
     const { reportId } = req.params;
-
-    const report = await reportService.getReport(reportId, req.user.id);
-
+    const report = await reportService.getReport(reportId);
     return res.json(report);
   } catch (error) {
     console.error('[API] Failed to retrieve report:', error);

@@ -18,6 +18,14 @@
   --error: #d93025;
   --font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+
+  /* Lighthouse score colors */
+  --score-green: #0cce6b;
+  --score-orange: #ffa400;
+  --score-red: #ff4e42;
+  --score-green-bg: rgba(12, 206, 107, 0.1);
+  --score-orange-bg: rgba(255, 164, 0, 0.1);
+  --score-red-bg: rgba(255, 78, 66, 0.1);
 }
 
 body {

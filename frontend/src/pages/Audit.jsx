@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PhaseIndicator from '../components/PhaseIndicator';
 import './Audit.css';
@@ -10,7 +10,31 @@ export default function Audit() {
   const [progress, setProgress] = useState('');
   const [progressPercent, setProgressPercent] = useState(0);
   const [currentPhase, setCurrentPhase] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [eta, setEta] = useState(null);
+  const timerRef = useRef(null);
   const navigate = useNavigate();
+
+  const startTimer = () => {
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const formatTime = (seconds) => {
+    if (seconds < 60) return `${seconds}s`;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}m ${s}s`;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,16 +42,15 @@ export default function Audit() {
     setLoading(true);
     setProgress('Starting audit...');
     setProgressPercent(0);
-
-    const token = localStorage.getItem('token');
+    setElapsed(0);
+    setEta(null);
+    startTimer();
 
     try {
-      // Make a fetch request with streaming response
       const response = await fetch('/api/audit-progress', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
           'Accept': 'text/event-stream'
         },
         body: JSON.stringify({ url })
@@ -38,7 +61,6 @@ export default function Audit() {
         throw new Error(errorData.error || 'Audit failed');
       }
 
-      // Read the stream
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
 
@@ -47,7 +69,6 @@ export default function Audit() {
 
         if (done) break;
 
-        // Decode the chunk
         const chunk = decoder.decode(value);
         const lines = chunk.split('\n');
 
@@ -60,6 +81,8 @@ export default function Audit() {
                 setProgress(data.message);
                 setProgressPercent(100);
                 setCurrentPhase(4);
+                setEta(null);
+                stopTimer();
 
                 setTimeout(() => {
                   navigate(`/reports/${data.reportId}`);
@@ -69,14 +92,22 @@ export default function Audit() {
                 setError(data.message);
                 setLoading(false);
                 setCurrentPhase(0);
+                setEta(null);
+                stopTimer();
                 return;
               } else if (data.status === 'processing' || data.status === 'started') {
                 setProgress(data.message);
-                setProgressPercent(data.progress || 0);
+                setProgressPercent(Math.min(data.progress || 0, 99));
 
-                // Update current phase from server
                 if (data.phase) {
                   setCurrentPhase(data.phase);
+                }
+                if (data.eta !== undefined && data.eta !== null) {
+                  setEta(prev => {
+                    if (prev === null) return data.eta;
+                    // Exponential moving average: 70% new value, 30% previous
+                    return Math.max(5, Math.round(data.eta * 0.7 + prev * 0.3));
+                  });
                 }
               }
             } catch (err) {
@@ -90,6 +121,7 @@ export default function Audit() {
       console.error('Audit error:', err);
       setError(err.message || 'Network error');
       setLoading(false);
+      stopTimer();
     }
   };
 
@@ -125,12 +157,16 @@ export default function Audit() {
                 <div className="progress-bar-container">
                   <div
                     className="progress-bar"
-                    style={{ width: `${progressPercent}%` }}
+                    style={{ width: `${Math.min(progressPercent, 100)}%` }}
                   ></div>
                 </div>
                 <div className="progress-info">
                   <span className="text-secondary">{progress}</span>
-                  <span className="progress-percent">{progressPercent}%</span>
+                  <span className="progress-percent">{Math.min(progressPercent, 100)}%</span>
+                </div>
+                <div className="progress-timing">
+                  <span className="text-secondary">Elapsed: {formatTime(elapsed)}</span>
+                  {eta && <span className="text-secondary">~{formatTime(eta)} remaining</span>}
                 </div>
               </div>
             </>

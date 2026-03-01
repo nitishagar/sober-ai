@@ -1,99 +1,276 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import ScoreGauge from '../components/ScoreGauge';
+import { getScoreClass, getScoreColorHex } from '../utils/scoreUtils';
 import './ReportDetail.css';
+
+const AUDIT_CATEGORIES = [
+  { key: 'ssrReadiness', label: 'SSR Readiness', scoreField: 'ssrScore', icon: '🖥️' },
+  { key: 'schemaCoverage', label: 'Schema Coverage', scoreField: 'schemaScore', icon: '🏷️' },
+  { key: 'semanticStructure', label: 'Semantic Structure', scoreField: 'semanticScore', icon: '🏗️' },
+  { key: 'contentExtractability', label: 'Content Extractability', scoreField: 'contentScore', icon: '📄' }
+];
 
 export default function ReportDetail() {
   const { id } = useParams();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    fetch(`/api/reports/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
+    fetch(`/api/reports/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Report not found');
+        return res.json();
+      })
       .then(data => setReport(data))
-      .catch(console.error)
+      .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="report-loading">Loading report...</div>;
   }
 
-  if (!report) {
-    return <div>Report not found</div>;
+  if (error || !report) {
+    return (
+      <div className="report-loading">
+        <p>{error || 'Report not found'}</p>
+        <Link to="/reports" className="back-link">← Back to Reports</Link>
+      </div>
+    );
   }
 
   const scores = [
     { label: 'SSR Readiness', value: report.ssrScore, key: 'ssr' },
     { label: 'Schema Coverage', value: report.schemaScore, key: 'schema' },
     { label: 'Semantic HTML', value: report.semanticScore, key: 'semantic' },
-    { label: 'Content Extract', value: report.contentScore, key: 'content' }
+    { label: 'Content Extract.', value: report.contentScore, key: 'content' }
   ];
 
   return (
     <div className="report-detail">
+      {/* Header with URL and overall gauge */}
       <div className="report-header">
-        <div>
-          <Link to="/reports" className="back-link">← Reports</Link>
-          <h1>{report.url}</h1>
+        <div className="report-header-info">
+          <Link to="/reports" className="back-link">← Back to Reports</Link>
+          <h1 className="report-url-title">{report.url}</h1>
           <p className="text-secondary">
             {new Date(report.createdAt).toLocaleString()} • {formatDuration(report.duration)}
+            {report.detectedIndustry && ` • ${report.detectedIndustry}`}
           </p>
         </div>
-        <div className="overall-score-large">
-          <div className="score-value">{report.overallScore}</div>
-          <div className={`grade-badge-large grade-${report.grade.toLowerCase()}`}>
+        <div className="report-overall-gauge">
+          <ScoreGauge score={report.overallScore} size={140} />
+          <div className={`grade-badge grade-${getScoreClass(report.overallScore)}`}>
             Grade {report.grade}
           </div>
         </div>
       </div>
 
-      <div className="scores-grid">
+      {/* Category score gauges */}
+      <div className="category-gauges">
         {scores.map(score => (
-          <div key={score.key} className="card score-card">
-            <div className="score-label text-secondary">{score.label}</div>
-            <div className="score-bar-container">
-              <div
-                className="score-bar"
-                style={{
-                  width: `${score.value}%`,
-                  background: getScoreColor(score.value)
-                }}
-              />
-            </div>
-            <div className="score-value-small">{score.value}</div>
-          </div>
+          <ScoreGauge
+            key={score.key}
+            score={score.value}
+            label={score.label}
+            size={100}
+          />
         ))}
       </div>
 
-      {report.detectedIndustry && (
-        <div className="card">
-          <div className="section-header">Detected Industry</div>
-          <p className="text-mono">{report.detectedIndustry}</p>
-        </div>
-      )}
+      {/* Per-category audit sections */}
+      {AUDIT_CATEGORIES.map(category => (
+        <AuditCategorySection
+          key={category.key}
+          category={category}
+          score={report[category.scoreField]}
+          auditResult={report.auditResults?.[category.key]}
+          recommendation={report.recommendations?.[category.key]}
+        />
+      ))}
+    </div>
+  );
+}
 
-      {report.recommendations && (
-        <div className="card">
-          <div className="section-header">AI Recommendations</div>
-          <div className="recommendations">
-            {renderRecommendations(report.recommendations)}
-          </div>
-        </div>
-      )}
+function AuditCategorySection({ category, score, auditResult, recommendation }) {
+  const [showFindings, setShowFindings] = useState(false);
+  const [showRaw, setShowRaw] = useState(false);
 
-      <div className="card">
-        <div className="section-header">Audit Details</div>
-        <details>
-          <summary>View full audit results</summary>
-          <div className="audit-json">
-            {renderColoredJSON(report.auditResults)}
-          </div>
-        </details>
+  const severity = auditResult?.severity || 'unknown';
+  const findings = auditResult?.findings || [];
+  const criticalCount = findings.filter(f => f.type === 'critical').length;
+  const warningCount = findings.filter(f => f.type === 'warning').length;
+  const passCount = findings.filter(f => f.type === 'pass').length;
+
+  const hasRecommendations = recommendation?.recommendations?.length > 0;
+  const isPassing = severity === 'pass';
+
+  return (
+    <div className="card audit-category-section">
+      {/* Category Header */}
+      <div className="category-header">
+        <div className="category-header-left">
+          <span className="category-icon">{category.icon}</span>
+          <h2 className="category-title">{category.label}</h2>
+          <SeverityBadge severity={severity} />
+        </div>
+        <div className="category-header-right">
+          <span
+            className="category-score"
+            style={{ color: getScoreColorHex(score) }}
+          >
+            {score}
+          </span>
+        </div>
       </div>
+
+      {/* Finding summary counts */}
+      {findings.length > 0 && (
+        <div className="finding-summary">
+          {criticalCount > 0 && (
+            <span className="finding-count finding-count-critical">{criticalCount} critical</span>
+          )}
+          {warningCount > 0 && (
+            <span className="finding-count finding-count-warning">{warningCount} warning{warningCount !== 1 ? 's' : ''}</span>
+          )}
+          {passCount > 0 && (
+            <span className="finding-count finding-count-pass">{passCount} passed</span>
+          )}
+        </div>
+      )}
+
+      {/* Recommendations */}
+      {hasRecommendations ? (
+        <RecommendationList recommendation={recommendation} />
+      ) : isPassing ? (
+        <div className="category-pass-message">
+          No issues found — this category meets AI optimization standards.
+        </div>
+      ) : (
+        <div className="category-no-recs">
+          No AI recommendations available for this category.
+        </div>
+      )}
+
+      {/* Findings toggle */}
+      {findings.length > 0 && (
+        <div className="category-toggle-section">
+          <button
+            className="category-toggle-btn"
+            onClick={() => setShowFindings(!showFindings)}
+          >
+            {showFindings ? '▼' : '▶'} {findings.length} audit finding{findings.length !== 1 ? 's' : ''}
+          </button>
+          {showFindings && (
+            <div className="findings-list">
+              {findings.map((finding, idx) => (
+                <FindingItem key={idx} finding={finding} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Raw data toggle */}
+      {auditResult && (
+        <div className="category-toggle-section">
+          <button
+            className="category-toggle-btn"
+            onClick={() => setShowRaw(!showRaw)}
+          >
+            {showRaw ? '▼' : '▶'} View raw audit data
+          </button>
+          {showRaw && (
+            <div className="audit-json">
+              <pre>{JSON.stringify(auditResult, null, 2)}</pre>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SeverityBadge({ severity }) {
+  const labels = {
+    pass: 'Passed',
+    warning: 'Needs Work',
+    critical: 'Critical'
+  };
+  return (
+    <span className={`severity-badge severity-${severity}`}>
+      {labels[severity] || severity}
+    </span>
+  );
+}
+
+function RecommendationList({ recommendation }) {
+  const recs = recommendation.recommendations || [];
+  return (
+    <div className="rec-list">
+      {recommendation.summary && (
+        <p className="rec-summary">{recommendation.summary}</p>
+      )}
+      <div className="rec-items">
+        {recs.map((rec, idx) => (
+          <div key={idx} className="rec-item">
+            {typeof rec === 'string' ? (
+              <p>{rec}</p>
+            ) : (
+              <>
+                <div className="rec-item-header">
+                  <strong>{rec.title}</strong>
+                  <div className="rec-badges">
+                    {rec.priority && (
+                      <span className={`rec-badge rec-priority-${String(rec.priority).toLowerCase()}`}>
+                        {rec.priority}
+                      </span>
+                    )}
+                    {rec.impact && <span className="rec-badge">{rec.impact} impact</span>}
+                    {rec.effort && <span className="rec-badge">{rec.effort} effort</span>}
+                  </div>
+                </div>
+                {rec.description && <p className="rec-item-desc">{rec.description}</p>}
+                {rec.why_it_matters && (
+                  <p className="rec-item-why">
+                    <em>Why it matters:</em> {rec.why_it_matters}
+                  </p>
+                )}
+                {rec.code_example && (
+                  <pre className="rec-code-example">{rec.code_example}</pre>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+      {recommendation.raw && (
+        <details className="rec-full-text-toggle">
+          <summary>View full AI analysis</summary>
+          <pre className="rec-full-text">{recommendation.raw}</pre>
+        </details>
+      )}
+    </div>
+  );
+}
+
+function FindingItem({ finding }) {
+  return (
+    <div className={`finding-item finding-type-${finding.type}`}>
+      <div className="finding-item-header">
+        <span className={`finding-type-badge finding-badge-${finding.type}`}>
+          {finding.type}
+        </span>
+        <strong className="finding-title">{finding.title}</strong>
+      </div>
+      <p className="finding-message">{finding.message}</p>
+      {finding.recommendation && (
+        <p className="finding-recommendation">
+          <em>Fix:</em> {finding.recommendation}
+        </p>
+      )}
     </div>
   );
 }
@@ -106,110 +283,4 @@ function formatDuration(ms) {
     return `${minutes}m ${seconds % 60}s`;
   }
   return `${seconds}s`;
-}
-
-function renderRecommendations(recommendations) {
-  if (typeof recommendations === 'string') {
-    return <div className="recommendation-text">{recommendations}</div>;
-  }
-
-  if (typeof recommendations === 'object' && recommendations !== null) {
-    return (
-      <div className="recommendations-list">
-        {Object.entries(recommendations).map(([key, value]) => (
-          <div key={key} className="recommendation-section">
-            <h3 className="recommendation-title">{formatAuditName(key)}</h3>
-            {value.summary && <p className="recommendation-summary">{value.summary}</p>}
-            {value.recommendations && Array.isArray(value.recommendations) && (
-              <ul className="recommendation-items">
-                {value.recommendations.map((rec, idx) => (
-                  <li key={idx}>
-                    {typeof rec === 'string' ? rec : (
-                      <div className="recommendation-item">
-                        <strong>{rec.title}</strong>
-                        {rec.description && <p>{rec.description}</p>}
-                        {rec.why_it_matters && <p><em>Why it matters:</em> {rec.why_it_matters}</p>}
-                        {rec.effort && <span className="badge">Effort: {rec.effort}</span>}
-                        {rec.impact && <span className="badge">Impact: {rec.impact}</span>}
-                        {rec.priority && <span className="badge">Priority: {rec.priority}</span>}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {value.fullText && (
-              <details className="recommendation-details">
-                <summary>View full analysis</summary>
-                <pre className="recommendation-full-text">{value.fullText}</pre>
-              </details>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  return <pre className="recommendation-text">{JSON.stringify(recommendations, null, 2)}</pre>;
-}
-
-function formatAuditName(name) {
-  return name
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, str => str.toUpperCase())
-    .trim();
-}
-
-function renderColoredJSON(obj, depth = 0) {
-  if (obj === null) return <span className="json-null">null</span>;
-  if (typeof obj === 'undefined') return <span className="json-undefined">undefined</span>;
-  if (typeof obj === 'string') return <span className="json-string">"{obj}"</span>;
-  if (typeof obj === 'number') return <span className="json-number">{obj}</span>;
-  if (typeof obj === 'boolean') return <span className="json-boolean">{obj.toString()}</span>;
-
-  const indent = '  '.repeat(depth);
-  const childIndent = '  '.repeat(depth + 1);
-
-  if (Array.isArray(obj)) {
-    if (obj.length === 0) return <span>[]</span>;
-    return (
-      <span>
-        {'[\n'}
-        {obj.map((item, idx) => (
-          <span key={idx}>
-            {childIndent}
-            {renderColoredJSON(item, depth + 1)}
-            {idx < obj.length - 1 ? ',\n' : '\n'}
-          </span>
-        ))}
-        {indent}{']'}
-      </span>
-    );
-  }
-
-  if (typeof obj === 'object') {
-    const entries = Object.entries(obj);
-    if (entries.length === 0) return <span>{'{}'}</span>;
-    return (
-      <span>
-        {'{\n'}
-        {entries.map(([key, value], idx) => (
-          <span key={key}>
-            {childIndent}
-            <span className="json-key">"{key}"</span>: {renderColoredJSON(value, depth + 1)}
-            {idx < entries.length - 1 ? ',\n' : '\n'}
-          </span>
-        ))}
-        {indent}{'}'}
-      </span>
-    );
-  }
-
-  return <span>{String(obj)}</span>;
-}
-
-function getScoreColor(score) {
-  if (score >= 80) return 'var(--success)';
-  if (score >= 60) return 'var(--warning)';
-  return 'var(--error)';
 }

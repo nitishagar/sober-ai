@@ -1,54 +1,11 @@
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
   output   = "../../node_modules/.prisma/client"
-}
-
-model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String?   // Null for OAuth users
-  name          String?
-  company       String?
-  role          Role      @default(USER)
-  plan          Plan      @default(FREE)
-
-  // OAuth fields
-  googleId      String?   @unique
-  githubId      String?   @unique
-
-  // Account status
-  emailVerified Boolean   @default(false)
-  isActive      Boolean   @default(true)
-
-  // Usage tracking
-  auditsThisMonth Int      @default(0)
-  lastAuditAt     DateTime?
-
-  // Relations
-  reports       Report[]
-  apiKeys       ApiKey[]
-  teamMembers   TeamMember[]
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
-enum Role {
-  USER
-  ADMIN
-  TEAM_ADMIN
-}
-
-enum Plan {
-  FREE
-  PROFESSIONAL
-  TEAM
-  ENTERPRISE
 }
 
 model Report {
@@ -69,87 +26,20 @@ model Report {
   detectedIndustry String
   duration        Int       // milliseconds
 
-  // Full results (JSON)
-  auditResults    Json
-  recommendations Json?
-
-  // Relations
-  userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Full results (JSON stored as String for SQLite)
+  auditResults    String
+  recommendations String?
 
   // Timestamps
   createdAt       DateTime  @default(now())
 
-  @@index([userId, createdAt])
   @@index([url])
+  @@index([createdAt])
 }
 
-model ApiKey {
-  id          String    @id @default(cuid())
-  name        String
-  key         String    @unique
-
-  // Permissions
-  scopes      String[]  @default(["read"])
-
-  // Usage tracking
-  lastUsedAt  DateTime?
-  requestCount Int      @default(0)
-
-  // Relations
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Status
-  isActive    Boolean   @default(true)
-  expiresAt   DateTime?
-
-  createdAt   DateTime  @default(now())
-
-  @@index([userId])
-}
-
-model TeamMember {
-  id        String    @id @default(cuid())
-  email     String
-  role      String    @default("member")
-
-  // Relations
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Status
-  status    String    @default("pending") // pending, active, removed
-  invitedAt DateTime  @default(now())
-  joinedAt  DateTime?
-
-  @@unique([userId, email])
-}
-
-model BatchJob {
-  id          String    @id @default(cuid())
-  userId      String
-
-  // Job details
-  urls        String[]
-  totalUrls   Int
-  completedUrls Int      @default(0)
-  failedUrls  Int       @default(0)
-
-  // Status
-  status      String    @default("pending") // pending, processing, completed, failed
-
-  // Results
-  reportIds   String[]  @default([])
-
-  // Notifications
-  webhookUrl  String?
-  notifyEmail Boolean   @default(false)
-
-  // Timestamps
-  createdAt   DateTime  @default(now())
-  startedAt   DateTime?
-  completedAt DateTime?
-
-  @@index([userId, createdAt])
+model Settings {
+  id        String   @id @default("default")
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
 }

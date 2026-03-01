@@ -162,31 +162,35 @@ class Auditor {
   }
 
   async generateRecommendations(auditResults, onLLMToken = () => {}, onStep = () => {}) {
-    const recommendations = {};
+    const failingAudits = Object.entries(auditResults)
+      .filter(([_, result]) => result.severity !== 'pass');
 
-    for (const [auditName, result] of Object.entries(auditResults)) {
-      if (result.severity !== 'pass') {
+    if (failingAudits.length === 0) return {};
+
+    onStep({ phase: 4, step: 'llm', message: `Generating ${failingAudits.length} AI recommendations...` });
+
+    const results = await Promise.all(
+      failingAudits.map(async ([auditName, result]) => {
         logger.info(`Generating recommendations for ${auditName}...`);
-        onStep({ phase: 4, step: auditName, message: `Generating recommendations for ${auditName}...` });
         try {
           const progressHandler = (token) => onLLMToken(auditName, token);
-
-          recommendations[auditName] = await this.llm.analyze(
+          const rec = await this.llm.analyze(
             result,
             this.getAuditType(auditName),
             progressHandler
           );
+          return [auditName, rec];
         } catch (error) {
           logger.error(`Failed to generate recommendations for ${auditName}:`, error);
-          recommendations[auditName] = {
+          return [auditName, {
             error: 'Failed to generate recommendations',
             message: error.message
-          };
+          }];
         }
-      }
-    }
+      })
+    );
 
-    return recommendations;
+    return Object.fromEntries(results);
   }
 
   getAuditType(auditName) {
