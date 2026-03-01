@@ -12,6 +12,7 @@ export default function Layout() {
             <Link to="/">Dashboard</Link>
             <Link to="/audit">Audit</Link>
             <Link to="/reports">Reports</Link>
+            <Link to="/settings">Settings</Link>
           </nav>
         </div>
       </header>

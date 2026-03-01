@@ -1,6 +1,3 @@
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
 const { EventEmitter } = require('events');
 const axios = require('axios');
 const LLMAnalyzer = require('../../../src/llm/analyzer');
@@ -143,29 +140,22 @@ describe('LLMAnalyzer', () => {
     );
   });
 
-  it('throws when model is not qwen3:4b', () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'llm-config-'));
-    const configPath = path.join(tmpDir, 'models.yaml');
-    fs.writeFileSync(
-      configPath,
-      [
-        'version: "1.0"',
-        'models:',
-        '  default: other-model',
-        '  fallback: null',
-        '  profiles:',
-        '    other-model:',
-        '      provider: ollama',
-        '      endpoint: http://localhost:11434',
-        '      model: llama2:7b',
-        '      max_tokens: 512',
-        '      temperature: 0.2',
-        '      top_p: 0.9'
-      ].join('\n'),
-      'utf8'
-    );
+  it('accepts custom provider settings', () => {
+    const analyzer = new LLMAnalyzer(null, {
+      provider: 'ollama_local',
+      endpoint: 'http://custom:11434',
+      model: 'llama2:7b'
+    });
 
-    expect(() => new LLMAnalyzer(configPath)).toThrow('Unsupported LLM model configured');
+    expect(analyzer.provider).toBeDefined();
+    expect(analyzer.provider.name).toBe('ollama_local');
+    expect(analyzer.provider.model).toBe('llama2:7b');
+  });
+
+  it('uses config from models.yaml when no provider settings given', () => {
+    const analyzer = new LLMAnalyzer();
+    expect(analyzer.provider).toBeDefined();
+    expect(analyzer.provider.model).toBe('qwen3:4b');
   });
 
   it('falls back to audit findings when LLM fails', async () => {

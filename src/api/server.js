@@ -9,6 +9,7 @@ const fs = require('fs');
 const auditProgressRouter = require('./routes/audit-progress');
 const mvpAuditRouter = require('./routes/audit-mvp');
 const reportsRouter = require('./routes/reports');
+const settingsRouter = require('./routes/settings');
 
 // Phase 1 routes (legacy, backward compatibility)
 const auditRouter = require('./routes/audit');
@@ -82,6 +83,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/audit-progress', auditProgressRouter);
 app.use('/api/mvp/audit', mvpAuditRouter);
 app.use('/api/reports', reportsRouter);
+app.use('/api/settings', settingsRouter);
 
 // Legacy routes (backward compatibility)
 app.use('/api/audit', auditRouter);

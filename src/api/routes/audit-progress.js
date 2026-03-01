@@ -1,6 +1,7 @@
 const express = require('express');
 const Auditor = require('../../core/auditor');
 const reportService = require('../../services/reportService');
+const { loadProviderSettings } = require('./settings');
 const { EventEmitter } = require('events');
 
 const router = express.Router();
@@ -212,8 +213,14 @@ router.post('/', async (req, res) => {
       progress: 0
     });
 
-    // Create auditor with config from request
-    const auditor = new Auditor(req.config);
+    // Load LLM provider settings from database and create auditor
+    let providerSettings = null;
+    try {
+      providerSettings = await loadProviderSettings();
+    } catch (err) {
+      console.log('[API] Using default LLM settings:', err.message);
+    }
+    const auditor = new Auditor(req.config, providerSettings);
 
     // Progress allocation weighted by typical phase duration
     // Phase 1 (Gathering): 30%, Phase 2 (Audits): 5%, Phase 3 (Scoring): 5%, Phase 4 (LLM): 60%

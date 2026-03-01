@@ -12,9 +12,9 @@ const Scorer = require('./scorer');
 const logger = require('../utils/logger');
 
 class Auditor {
-  constructor(config) {
+  constructor(config, providerSettings = null) {
     this.config = config;
-    this.llm = new LLMAnalyzer();
+    this.llm = new LLMAnalyzer(null, providerSettings);
     this.scorer = new Scorer(config.audits.weights);
 
     this.gatherers = {

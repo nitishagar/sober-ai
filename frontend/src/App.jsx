@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Audit from './pages/Audit';
 import Reports from './pages/Reports';
 import ReportDetail from './pages/ReportDetail';
+import Settings from './pages/Settings';
 import Layout from './components/Layout';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
           <Route path="audit" element={<Audit />} />
           <Route path="reports" element={<Reports />} />
           <Route path="reports/:id" element={<ReportDetail />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

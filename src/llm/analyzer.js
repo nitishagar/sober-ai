@@ -1,12 +1,12 @@
-const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
 const logger = require('../utils/logger');
 const { sanitizeForJson, ensureArray } = require('./utils/llm-helpers');
+const ProviderFactory = require('./providers/ProviderFactory');
 
 class LLMAnalyzer {
-  constructor(configPath = null) {
+  constructor(configPath = null, providerSettings = null) {
     const defaultConfigPath = path.join(__dirname, '../config/models.yaml');
     const resolvedPath = configPath || defaultConfigPath;
 
@@ -25,24 +25,26 @@ class LLMAnalyzer {
       throw new Error(`LLM profile not found for key: ${defaultProfileKey}`);
     }
 
-    const envEndpoint = process.env.OLLAMA_ENDPOINT;
-    this.endpoint = envEndpoint || profile.endpoint;
-    this.model = profile.model;
-    this.temperature = profile.temperature ?? 0.3;
-    this.topP = profile.top_p ?? 0.9;
-    this.maxTokens = profile.max_tokens ?? 2048;
-
-    if (!this.endpoint) {
-      throw new Error('LLM endpoint not configured');
-    }
-
-    if (this.model !== 'qwen3:4b') {
-      throw new Error(`Unsupported LLM model configured: ${this.model}. Expected qwen3:4b.`);
+    // Use provider settings if passed, otherwise fall back to config/env
+    if (providerSettings) {
+      this.provider = ProviderFactory.create(providerSettings);
+    } else {
+      const envEndpoint = process.env.OLLAMA_ENDPOINT;
+      this.provider = ProviderFactory.create({
+        provider: 'ollama_local',
+        endpoint: envEndpoint || profile.endpoint,
+        model: profile.model,
+        options: {
+          temperature: profile.temperature ?? 0.3,
+          top_p: profile.top_p ?? 0.9,
+          max_tokens: profile.max_tokens ?? 2048
+        }
+      });
     }
 
     this.prompts = this.loadPromptTemplates();
     this.schemaValidators = this.loadSchemaValidators();
-    logger.info(`LLMAnalyzer ready using model ${this.model} at ${this.endpoint}`);
+    logger.info(`LLMAnalyzer ready using ${this.provider.name} provider`);
   }
 
   loadPromptTemplates() {
@@ -103,7 +105,7 @@ class LLMAnalyzer {
     const populatedPrompt = this.populateTemplate(prompt, auditResult);
 
     try {
-      const rawResponse = await this.callModel(populatedPrompt, onProgress);
+      const rawResponse = await this.provider.generate(populatedPrompt, onProgress);
       const parsed = this.parseResponse(rawResponse);
       const validated = this.validateStructuredResponse(parsed, auditResult);
       const comparison = this.compareWithBaseline(auditResult, validated);
@@ -172,53 +174,6 @@ class LLMAnalyzer {
 
     walk(details);
     return result;
-  }
-
-  async callModel(prompt, onProgress) {
-    const payload = {
-      model: this.model,
-      prompt,
-      stream: Boolean(onProgress),
-      options: {
-        temperature: this.temperature,
-        top_p: this.topP,
-        num_predict: this.maxTokens
-      }
-    };
-
-    if (!onProgress) {
-      const response = await axios.post(`${this.endpoint}/api/generate`, payload, { timeout: 60000 });
-      return response.data.response;
-    }
-
-    const response = await axios.post(`${this.endpoint}/api/generate`, payload, {
-      timeout: 60000,
-      responseType: 'stream'
-    });
-
-    return new Promise((resolve, reject) => {
-      let aggregated = '';
-      response.data.on('data', (chunk) => {
-        const lines = chunk.toString().split('\n').filter(Boolean);
-        for (const line of lines) {
-          try {
-            const json = JSON.parse(line);
-            if (json.response) {
-              aggregated += json.response;
-              onProgress(json.response);
-            }
-            if (json.done) {
-              resolve(aggregated);
-            }
-          } catch (parseError) {
-            logger.debug(`Streaming parse error: ${parseError.message}`);
-          }
-        }
-      });
-
-      response.data.on('error', reject);
-      response.data.on('end', () => resolve(aggregated));
-    });
   }
 
   parseResponse(rawText) {
