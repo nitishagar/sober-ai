@@ -38,7 +38,7 @@ model Report {
 }
 
 model Settings {
-  id        String   @id @default("default")
+  id        String   @id @default(cuid())
   key       String   @unique
   value     String
   updatedAt DateTime @updatedAt

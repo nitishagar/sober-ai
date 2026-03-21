@@ -10,6 +10,10 @@ jobs:
   test:
     name: Test & Lint
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: file:/tmp/soberai-test.db
+      OLLAMA_ENDPOINT: http://localhost:11435
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,6 +22,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate --schema=src/db/schema.prisma
-      - run: npm test
+      - name: Run tests (unit + integration)
+        run: npm run test:ci
+      - name: Lint
+        run: npm run lint
       - name: Build frontend
         run: cd frontend && npm ci && npm run build
