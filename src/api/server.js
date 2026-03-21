@@ -22,6 +22,25 @@ const logger = require('../utils/logger');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Ollama health cache — avoids pinging on every /api/health poll
+let ollamaStatusCache = { status: 'unknown', checkedAt: 0 };
+
+async function checkOllama() {
+  const now = Date.now();
+  if (now - ollamaStatusCache.checkedAt < 10000) return ollamaStatusCache.status;
+  const endpoint = process.env.OLLAMA_ENDPOINT || 'http://localhost:11434';
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(`${endpoint}/api/tags`, { signal: controller.signal });
+    clearTimeout(timeout);
+    ollamaStatusCache = { status: res.ok ? 'connected' : 'unreachable', checkedAt: now };
+  } catch (_) {
+    ollamaStatusCache = { status: 'unreachable', checkedAt: now };
+  }
+  return ollamaStatusCache.status;
+}
+
 // Load configuration
 const loadConfig = () => {
   const auditsConfig = yaml.load(
@@ -66,15 +85,16 @@ app.use((req, res, next) => {
   }
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
+// Health check endpoint — performs a real Ollama ping with 10s result cache
+app.get('/api/health', async (req, res) => {
+  const ollamaStatus = await checkOllama();
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     version: '0.3.0',
     services: {
       database: process.env.DATABASE_URL ? 'connected' : 'not configured',
-      ollama: process.env.OLLAMA_ENDPOINT ? 'connected' : 'not configured'
+      ollama: ollamaStatus
     }
   });
 });

@@ -8,6 +8,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
+  const [llmStatus, setLlmStatus] = useState(null);
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
@@ -18,8 +19,12 @@ export default function Settings() {
       .then(([settingsData, providerData]) => {
         setSettings(settingsData);
         setProviders(providerData);
+        // Auto-test connection silently on load
+        return fetch('/api/settings/test-connection', { method: 'POST' });
       })
-      .catch(err => setMessage({ type: 'error', text: 'Failed to load settings' }))
+      .then(r => r.json())
+      .then(data => setLlmStatus(data))
+      .catch(() => {})   // silent — user can still manually test
       .finally(() => setLoading(false));
   }, []);
 
@@ -85,7 +90,14 @@ export default function Settings() {
       )}
 
       <section className="settings-section">
-        <h2>LLM Provider</h2>
+        <h2>
+          LLM Provider{' '}
+          {llmStatus && (
+            <span className={`llm-status-badge ${llmStatus.ok ? 'ok' : 'fail'}`}>
+              {llmStatus.ok ? '● Connected' : '● Not connected'}
+            </span>
+          )}
+        </h2>
         <p className="settings-description">
           Configure which AI model provider to use for generating audit recommendations.
         </p>

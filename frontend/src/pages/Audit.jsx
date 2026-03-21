@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PhaseIndicator from '../components/PhaseIndicator';
 import './Audit.css';
@@ -12,8 +12,16 @@ export default function Audit() {
   const [currentPhase, setCurrentPhase] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [eta, setEta] = useState(null);
+  const [llmReady, setLlmReady] = useState(null);   // null = checking
   const timerRef = useRef(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch('/api/health')
+      .then(r => r.json())
+      .then(data => setLlmReady(data.services?.ollama === 'connected'))
+      .catch(() => setLlmReady(false));
+  }, []);
 
   const startTimer = () => {
     const startTime = Date.now();
@@ -127,6 +135,23 @@ export default function Audit() {
 
   return (
     <div className="audit-page">
+      {llmReady === false && (
+        <div className="llm-warning">
+          <strong>Ollama not detected.</strong>{' '}
+          AI recommendations require Ollama running locally.{' '}
+          <a href="https://ollama.com/download" target="_blank" rel="noreferrer">
+            Install Ollama
+          </a>
+          {' '}then run:{' '}
+          <code>ollama pull qwen3:4b</code>
+          <button
+            className="llm-warning-dismiss"
+            onClick={() => setLlmReady(true)}
+            aria-label="Dismiss"
+          >×</button>
+        </div>
+      )}
+
       <div className="audit-header">
         <h1>New Audit</h1>
         <p className="text-secondary">Enter a URL to analyze its SEO readiness</p>

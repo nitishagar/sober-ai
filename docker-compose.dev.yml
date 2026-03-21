@@ -1,3 +1,6 @@
+# docker-compose.dev.yml
+# Infrastructure-only compose for integration test environments.
+# For full local development, use: npm run docker:up (docker-compose.local.yml)
 version: '3.8'
 
 services:

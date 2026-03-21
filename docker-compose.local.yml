@@ -1,44 +1,11 @@
 version: '3.8'
 
 services:
-  # PostgreSQL database
-  postgres:
-    image: postgres:15-alpine
-    container_name: sober-postgres-local
-    environment:
-      POSTGRES_DB: soberai_dev
-      POSTGRES_USER: soberai
-      POSTGRES_PASSWORD: dev_password
-    volumes:
-      - postgres-local-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U soberai"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Redis for queue system
-  redis:
-    image: redis:7-alpine
-    container_name: sober-redis-local
-    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Ollama LLM service with auto-model download
   ollama:
     build:
       context: .
       dockerfile: docker/Dockerfile.ollama
     container_name: sober-ollama-local
-    platform: linux/arm64
     ports:
       - "11434:11434"
     volumes:
@@ -56,7 +23,6 @@ services:
       retries: 10
       start_period: 180s
 
-  # Backend API
   backend:
     build:
       context: .
@@ -66,25 +32,20 @@ services:
       - "3000:3000"
     volumes:
       - ./src:/app/src
+      - sqlite-local-data:/app/data
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - DATABASE_URL=postgresql://soberai:dev_password@postgres:5432/soberai_dev
+      - DATABASE_URL=file:/app/data/soberai.db
       - OLLAMA_ENDPOINT=http://ollama:11434
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       ollama:
         condition: service_healthy
     command: >
       sh -c "
-        echo '[Backend] Waiting for dependencies...' &&
+        echo '[Backend] Running migrations...' &&
         npx prisma migrate deploy --schema=src/db/schema.prisma &&
         echo '[Backend] Migrations applied' &&
-        node src/db/seed.js &&
-        echo '[Backend] Database seeded' &&
         npm run dev
       "
     healthcheck:
@@ -92,9 +53,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 60s
+      start_period: 30s
 
-  # Frontend (React + Vite with HMR)
   frontend:
     build:
       context: .
@@ -111,13 +71,7 @@ services:
       backend:
         condition: service_healthy
     command: npm run dev -- --host 0.0.0.0
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5173"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
 
 volumes:
-  postgres-local-data:
   ollama-local-data:
+  sqlite-local-data:

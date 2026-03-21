@@ -160,3 +160,14 @@
   font-size: 0.8125rem;
   color: var(--text-secondary, #64748b);
 }
+
+.llm-status-badge {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.llm-status-badge.ok   { background: #d4edda; color: #155724; }
+.llm-status-badge.fail { background: #f8d7da; color: #721c24; }
