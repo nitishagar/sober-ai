@@ -121,7 +121,7 @@ class Auditor {
 
       onStep({ phase: 1, step: 'ssr', message: 'Analyzing server-side rendering...' });
       logger.info('Gathering SSR data...');
-      const ssrData = await this.gatherers.ssr.gather(url);
+      const ssrData = await this.gatherers.ssr.gather(url, browser);
 
       onStep({ phase: 1, step: 'structuredData', message: 'Analyzing structured data...' });
       onStep({ phase: 1, step: 'semanticHTML', message: 'Analyzing semantic HTML...' });

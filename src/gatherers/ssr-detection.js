@@ -1,23 +1,17 @@
-const { chromium } = require('playwright');
 const logger = require('../utils/logger');
 
 class SSRDetectionGatherer {
-  async gather(url) {
+  async gather(url, browser) {
     logger.info(`SSR Detection: Analyzing ${url}`);
 
-    const browser = await chromium.launch({
-      headless: true,
-      args: ['--no-sandbox']
+    // Step 1: Fetch WITHOUT JavaScript
+    logger.info('Step 1: Fetching without JS...');
+    const contextNoJS = await browser.newContext({
+      javaScriptEnabled: false,
+      userAgent: 'SoberAI-Optimizer/1.0 (No-JS Mode)'
     });
 
     try {
-      // Step 1: Fetch WITHOUT JavaScript
-      logger.info('Step 1: Fetching without JS...');
-      const contextNoJS = await browser.newContext({
-        javaScriptEnabled: false,
-        userAgent: 'SoberAI-Optimizer/1.0 (No-JS Mode)'
-      });
-
       const pageNoJS = await contextNoJS.newPage();
       await pageNoJS.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
@@ -34,25 +28,28 @@ class SSRDetectionGatherer {
         userAgent: 'SoberAI-Optimizer/1.0 (JS Mode)'
       });
 
-      const pageWithJS = await contextWithJS.newPage();
-      await pageWithJS.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+      try {
+        const pageWithJS = await contextWithJS.newPage();
+        await pageWithJS.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
 
-      // Wait for dynamic content
-      await pageWithJS.waitForTimeout(3000);
+        // Wait for dynamic content
+        await pageWithJS.waitForTimeout(3000);
 
-      const csrHTML = await pageWithJS.content();
-      const csrText = await this.extractTextContent(pageWithJS);
-      const csrElements = await this.extractCriticalElements(pageWithJS);
+        const csrHTML = await pageWithJS.content();
+        const csrText = await this.extractTextContent(pageWithJS);
+        const csrElements = await this.extractCriticalElements(pageWithJS);
 
-      await contextWithJS.close();
-
-      // Step 3: Calculate metrics
-      return this.calculateMetrics(
-        { html: ssrHTML, text: ssrText, elements: ssrElements },
-        { html: csrHTML, text: csrText, elements: csrElements }
-      );
-    } finally {
-      await browser.close();
+        // Step 3: Calculate metrics
+        return this.calculateMetrics(
+          { html: ssrHTML, text: ssrText, elements: ssrElements },
+          { html: csrHTML, text: csrText, elements: csrElements }
+        );
+      } finally {
+        await contextWithJS.close();
+      }
+    } catch (err) {
+      await contextNoJS.close().catch(() => {});
+      throw err;
     }
   }
 
