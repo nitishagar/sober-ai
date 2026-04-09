@@ -73,6 +73,15 @@ const CANNED_GATHERED_DATA = {
     media: { images: 0, videos: 0, audio: 0 },
     readability: { hasHeadings: true, hasLists: true, hasBoldOrEmphasis: false, hasBlockquotes: false },
     extractabilityScore: 55
+  },
+  machineReadability: {
+    robots_txt_exists: true, robots_txt_allows_ai: true, robots_txt_blocks_ai: false,
+    robots_ai_crawlers: { GPTBot: true, 'ChatGPT-User': true, 'anthropic-ai': true, CCBot: true, 'Google-Extended': true },
+    llms_txt_exists: false,
+    sitemap_exists: true, sitemap_parseable: true,
+    og_title: 'Test Page', og_description: 'A test page', og_image: null,
+    twitter_card: null, twitter_title: null, og_complete: false,
+    response_time_ms: 500, is_https: true
   }
 };
 
@@ -105,12 +114,13 @@ describe('Audit Pipeline (Tier 2)', () => {
     expect(result.scores.overall).toBeGreaterThanOrEqual(0);
     expect(result.scores.overall).toBeLessThanOrEqual(100);
 
-    // All 4 audits ran
+    // All 5 audits ran
     expect(result.auditResults).toBeDefined();
     expect(result.auditResults.ssrReadiness).toBeDefined();
     expect(result.auditResults.schemaCoverage).toBeDefined();
     expect(result.auditResults.semanticStructure).toBeDefined();
     expect(result.auditResults.contentExtractability).toBeDefined();
+    expect(result.auditResults.machineReadability).toBeDefined();
 
     // Each audit score in valid range
     for (const [name, audit] of Object.entries(result.auditResults)) {
@@ -167,7 +177,8 @@ describe('Audit Pipeline (Tier 2)', () => {
       (auditResults.ssrReadiness.score * weights.ssr_readiness +
        auditResults.schemaCoverage.score * weights.schema_coverage +
        auditResults.semanticStructure.score * weights.semantic_structure +
-       auditResults.contentExtractability.score * weights.content_extractability) / totalWeight
+       auditResults.contentExtractability.score * weights.content_extractability +
+       (auditResults.machineReadability?.score ?? 0) * (weights.machine_readability ?? 0)) / totalWeight
     );
 
     // Allow 1 point rounding tolerance

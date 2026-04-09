@@ -53,7 +53,8 @@ class LLMAnalyzer {
       ssr_analysis: 'ssr-analysis.txt',
       schema_recommendations: 'schema-recommendations.txt',
       semantic_improvements: 'semantic-improvements.txt',
-      content_optimization: 'content-optimization.txt'
+      content_optimization: 'content-optimization.txt',
+      machine_readability_recommendations: 'machine-readability-recommendations.txt'
     };
 
     const prompts = {};

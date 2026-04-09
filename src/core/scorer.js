@@ -51,7 +51,8 @@ class Scorer {
       ssrReadiness: 'ssr_readiness',
       schemaCoverage: 'schema_coverage',
       semanticStructure: 'semantic_structure',
-      contentExtractability: 'content_extractability'
+      contentExtractability: 'content_extractability',
+      machineReadability: 'machine_readability'
     };
     return keyMap[auditName] || auditName;
   }

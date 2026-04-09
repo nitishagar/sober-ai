@@ -43,6 +43,15 @@ const CANNED_DATA = {
     media: { images: 0, videos: 0, audio: 0 },
     readability: { hasHeadings: true, hasLists: true, hasBoldOrEmphasis: false, hasBlockquotes: false },
     extractabilityScore: 55
+  },
+  machineReadability: {
+    robots_txt_exists: true, robots_txt_allows_ai: true, robots_txt_blocks_ai: false,
+    robots_ai_crawlers: { GPTBot: true, 'ChatGPT-User': true, 'anthropic-ai': true, CCBot: true, 'Google-Extended': true },
+    llms_txt_exists: false,
+    sitemap_exists: true, sitemap_parseable: true,
+    og_title: 'Test Page', og_description: 'A test page', og_image: null,
+    twitter_card: null, twitter_title: null, og_complete: false,
+    response_time_ms: 500, is_https: true
   }
 };
 

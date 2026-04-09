@@ -48,6 +48,19 @@ jest.mock('../../src/gatherers/content-analysis', () => {
   }));
 });
 
+jest.mock('../../src/gatherers/machine-readability', () => {
+  return jest.fn().mockImplementation(() => ({
+    gather: jest.fn().mockResolvedValue({
+      robots_txt_exists: true, robots_txt_allows_ai: true, robots_txt_blocks_ai: false,
+      robots_ai_crawlers: {}, llms_txt_exists: false,
+      sitemap_exists: true, sitemap_parseable: true,
+      og_title: null, og_description: null, og_image: null,
+      twitter_card: null, twitter_title: null, og_complete: false,
+      response_time_ms: 500, is_https: true
+    })
+  }));
+});
+
 const auditResults = {
   ssrReadiness: { score: 70, severity: 'warning', findings: [] },
   schemaCoverage: { score: 95, severity: 'pass', findings: [] },
@@ -69,6 +82,10 @@ jest.mock('../../src/audits/semantic-structure.audit', () => {
 
 jest.mock('../../src/audits/content-extractability.audit', () => {
   return jest.fn().mockImplementation(() => ({ audit: jest.fn(() => auditResults.contentExtractability) }));
+});
+
+jest.mock('../../src/audits/machine-readability.audit', () => {
+  return jest.fn().mockImplementation(() => ({ audit: jest.fn(() => ({ score: 75, severity: 'warning', findings: [] })) }));
 });
 
 const mockLlmAnalyze = jest.fn(async (_result, _type, onProgress) => {
@@ -115,11 +132,11 @@ describe('Auditor progress callbacks', () => {
 
     const stepMessages = onStep.mock.calls.map((call) => call[0].message);
     expect(stepMessages).toContain('Analyzing server-side rendering...');
-    expect(stepMessages).toContain('Generating 1 AI recommendations...');
+    expect(stepMessages).toContain('Generating 2 AI recommendations...');
 
     expect(onLLMToken).toHaveBeenCalled();
     expect(onLLMToken.mock.calls[0][0]).toBe('ssrReadiness');
-    expect(mockLlmAnalyze).toHaveBeenCalledTimes(1);
+    expect(mockLlmAnalyze).toHaveBeenCalledTimes(2);
   });
 
   it('maintains backwards compatibility with function progress callback signature', async () => {
