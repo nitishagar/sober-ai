@@ -365,6 +365,8 @@ router.post('/', async (req, res) => {
 
     console.log(`[API] Audit completed, report ID: ${report.id}`);
 
+    const fallbackUsed = Object.values(auditResult.recommendations || {}).some(r => r && r.fallback === true);
+
     const latestSession = activeSessions.get(sessionId);
     if (latestSession && latestSession.state) {
       latestSession.state.status = 'completed';
@@ -376,7 +378,7 @@ router.post('/', async (req, res) => {
     }
 
     // Send completion
-    sendProgress({
+    const completedPayload = {
       status: 'completed',
       message: 'Audit complete!',
       progress: 100,
@@ -388,7 +390,9 @@ router.post('/', async (req, res) => {
         duration: auditResult.duration,
         metadata: auditResult.metadata
       }
-    });
+    };
+    if (fallbackUsed) completedPayload.fallbackUsed = true;
+    sendProgress(completedPayload);
 
     // Close connection after a delay
     setTimeout(() => {
