@@ -19,10 +19,11 @@ With 1 billion+ monthly AI crawler requests (GPTBot, ClaudeBot, PerplexityBot), 
 
 | Category | Weight | Description |
 |----------|--------|-------------|
-| SSR Readiness | 25% | Server-side rendering for AI agents that don't execute JavaScript |
+| SSR Readiness | 20% | Server-side rendering for AI agents that don't execute JavaScript |
 | Schema Coverage | 20% | Structured data (Schema.org) for AI understanding |
 | Semantic Structure | 20% | HTML5 semantic elements and heading hierarchy |
 | Content Extractability | 20% | Text readability and accessibility for LLMs |
+| Machine Readability | 20% | AI crawler access (robots.txt, llms.txt, sitemap, OpenGraph) |
 
 AI-powered recommendations are generated using your choice of LLM provider (Ollama or OpenAI).
 
@@ -72,9 +73,10 @@ Or configure OpenAI in Settings with your API key.
 
 1. Navigate to the **Audit** page
 2. Enter a URL (e.g., `https://vercel.com`)
-3. Click **Run Audit** and watch real-time progress
-4. Review scores, findings, and AI recommendations
-5. Configure your LLM provider in **Settings**
+3. Click **Run Audit** and watch real-time progress (auto-reconnects on network interruption)
+4. Review scores across 5 categories, findings, and AI recommendations
+5. Compare reports over time to track improvements
+6. Configure your LLM provider in **Settings**
 
 ## Architecture
 
@@ -99,9 +101,16 @@ Electron Shell
 ## Testing
 
 ```bash
-npm test          # Run all tests
-npm run verify    # Run tests + lint
+npm test              # Run all tests (185 tests, 18 suites)
+npm run test:unit     # Unit tests only
+npm run test:integration  # Integration tests only
+npm run test:ci       # CI mode (all tests, force exit)
+npm run verify        # Run tests + lint
 ```
+
+The test suite covers:
+- **Unit tests**: All 5 audit classes (score boundaries, severity, findings), scorer, validator, LLM analyzer, provider factory
+- **Integration tests**: SSE streaming (reconnect, error paths), audit pipeline, settings, reports (CRUD + compare), provider routing, health
 
 ## Documentation
 
