@@ -44,6 +44,58 @@ export default function Audit() {
     return `${m}m ${s}s`;
   };
 
+  const processSSEStream = async (reader, sessionIdRef, completedRef) => {
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.substring(6));
+
+            if (data.status === 'completed') {
+              completedRef.current = true;
+              setProgress(data.message);
+              setProgressPercent(100);
+              setCurrentPhase(4);
+              setEta(null);
+              stopTimer();
+              setTimeout(() => navigate(`/reports/${data.reportId}`), 1000);
+              return;
+            } else if (data.status === 'error') {
+              completedRef.current = true;
+              setError(data.message);
+              setLoading(false);
+              setCurrentPhase(0);
+              setEta(null);
+              stopTimer();
+              return;
+            } else if (data.status === 'processing' || data.status === 'started') {
+              if (data.sessionId) sessionIdRef.current = data.sessionId;
+              setProgress(data.message);
+              setProgressPercent(Math.min(data.progress || 0, 99));
+              if (data.phase) setCurrentPhase(data.phase);
+              if (data.eta !== undefined && data.eta !== null) {
+                setEta(prev => {
+                  if (prev === null) return data.eta;
+                  return Math.max(5, Math.round(data.eta * 0.7 + prev * 0.3));
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Failed to parse progress:', err);
+          }
+        }
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -53,6 +105,9 @@ export default function Audit() {
     setElapsed(0);
     setEta(null);
     startTimer();
+
+    const sessionIdRef = { current: null };
+    const completedRef = { current: false };
 
     try {
       const response = await fetch('/api/audit-progress', {
@@ -69,67 +124,31 @@ export default function Audit() {
         throw new Error(errorData.error || 'Audit failed');
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+      await processSSEStream(response.body.getReader(), sessionIdRef, completedRef);
 
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.substring(6));
-
-              if (data.status === 'completed') {
-                setProgress(data.message);
-                setProgressPercent(100);
-                setCurrentPhase(4);
-                setEta(null);
-                stopTimer();
-
-                setTimeout(() => {
-                  navigate(`/reports/${data.reportId}`);
-                }, 1000);
-                return;
-              } else if (data.status === 'error') {
-                setError(data.message);
-                setLoading(false);
-                setCurrentPhase(0);
-                setEta(null);
-                stopTimer();
-                return;
-              } else if (data.status === 'processing' || data.status === 'started') {
-                setProgress(data.message);
-                setProgressPercent(Math.min(data.progress || 0, 99));
-
-                if (data.phase) {
-                  setCurrentPhase(data.phase);
-                }
-                if (data.eta !== undefined && data.eta !== null) {
-                  setEta(prev => {
-                    if (prev === null) return data.eta;
-                    // Exponential moving average: 70% new value, 30% previous
-                    return Math.max(5, Math.round(data.eta * 0.7 + prev * 0.3));
-                  });
-                }
-              }
-            } catch (err) {
-              console.error('Failed to parse progress:', err);
-            }
-          }
+      // Reconnect once if stream ended without a terminal event and we have a sessionId
+      if (!completedRef.current && sessionIdRef.current) {
+        console.log('Stream ended early, reconnecting via session endpoint...');
+        setProgress('Reconnecting...');
+        const reconnectResponse = await fetch(
+          `/api/audit-progress/session/${sessionIdRef.current}/stream`,
+          { headers: { 'Accept': 'text/event-stream' } }
+        );
+        if (reconnectResponse.ok) {
+          await processSSEStream(reconnectResponse.body.getReader(), sessionIdRef, completedRef);
         }
       }
 
+      if (!completedRef.current) {
+        throw new Error('Audit stream ended unexpectedly');
+      }
     } catch (err) {
-      console.error('Audit error:', err);
-      setError(err.message || 'Network error');
-      setLoading(false);
-      stopTimer();
+      if (!completedRef.current) {
+        console.error('Audit error:', err);
+        setError(err.message || 'Network error');
+        setLoading(false);
+        stopTimer();
+      }
     }
   };
 

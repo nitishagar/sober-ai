@@ -1,6 +1,6 @@
 const request = require('supertest');
 const { makeTestServer } = require('../helpers/server');
-const { collectSSE } = require('../helpers/sse');
+const { collectSSE, collectSSEGet } = require('../helpers/sse');
 const { truncateAll, disconnect } = require('../helpers/db');
 const app = require('../../src/api/server');
 
@@ -117,5 +117,100 @@ describe('POST /api/audit-progress (SSE)', () => {
     for (let i = 1; i < progressEvents.length; i++) {
       expect(progressEvents[i].progress).toBeGreaterThanOrEqual(progressEvents[i - 1].progress);
     }
+  });
+
+  it('reconnects mid-run via session stream endpoint and receives completed event', async () => {
+    // Start audit, grab only the 'started' event to get sessionId
+    const firstEvents = await collectSSE(
+      `${testServer.url()}/api/audit-progress`,
+      { url: 'https://reconnect-test.example.com' },
+      { maxEvents: 1, timeoutMs: 10000 }
+    );
+
+    expect(firstEvents.length).toBeGreaterThan(0);
+    expect(firstEvents[0].status).toBe('started');
+    const sessionId = firstEvents[0].sessionId;
+    expect(sessionId).toBeDefined();
+
+    // Wait briefly for audit to make progress before reconnecting
+    await new Promise(r => setTimeout(r, 300));
+
+    // Reconnect via GET session stream endpoint
+    const reconnectEvents = await collectSSEGet(
+      `${testServer.url()}/api/audit-progress/session/${sessionId}/stream`,
+      { maxEvents: 30, timeoutMs: 30000 }
+    );
+
+    expect(reconnectEvents.length).toBeGreaterThan(0);
+    // First event is always a catch-up snapshot of current state
+    const snapshot = reconnectEvents[0];
+    expect(['started', 'processing', 'completed']).toContain(snapshot.status);
+
+    // Should eventually see the completed event (either in snapshot or later)
+    const completedEvent = reconnectEvents.find(e => e.status === 'completed');
+    expect(completedEvent).toBeDefined();
+    expect(typeof completedEvent.reportId).toBe('string');
+  });
+
+  it('emits error event when LLM provider fails', async () => {
+    const genSpy = jest.spyOn(Auditor.prototype, 'generateRecommendations')
+      .mockRejectedValueOnce(new Error('LLM connection refused'));
+
+    const events = await collectSSE(
+      `${testServer.url()}/api/audit-progress`,
+      { url: 'https://llm-fail-test.example.com' },
+      { maxEvents: 20, timeoutMs: 30000 }
+    );
+
+    genSpy.mockRestore();
+
+    const errorEvent = events.find(e => e.status === 'error');
+    expect(errorEvent).toBeDefined();
+    expect(typeof errorEvent.message).toBe('string');
+    expect(typeof errorEvent.progress).toBe('number');
+    expect(errorEvent.error).toBeDefined();
+    expect(typeof errorEvent.error.type).toBe('string');
+    expect(typeof errorEvent.error.details).toBe('string');
+  });
+
+  it('emits error event with timeout message on network timeout', async () => {
+    const gatherSpy = jest.spyOn(Auditor.prototype, 'runGatherers')
+      .mockRejectedValueOnce(new Error('timeout waiting for network response'));
+
+    const events = await collectSSE(
+      `${testServer.url()}/api/audit-progress`,
+      { url: 'https://timeout-test.example.com' },
+      { maxEvents: 10, timeoutMs: 15000 }
+    );
+
+    gatherSpy.mockRestore();
+
+    const errorEvent = events.find(e => e.status === 'error');
+    expect(errorEvent).toBeDefined();
+    expect(errorEvent.message).toMatch(/timed?\s?out/i);
+    expect(typeof errorEvent.error.type).toBe('string');
+    expect(errorEvent.error.details).toMatch(/timeout/i);
+  });
+
+  it('error event contains all required fields with correct types', async () => {
+    const gatherSpy = jest.spyOn(Auditor.prototype, 'runGatherers')
+      .mockRejectedValueOnce(new Error('ENOTFOUND some-domain.invalid'));
+
+    const events = await collectSSE(
+      `${testServer.url()}/api/audit-progress`,
+      { url: 'https://structure-test.example.com' },
+      { maxEvents: 10, timeoutMs: 15000 }
+    );
+
+    gatherSpy.mockRestore();
+
+    const errorEvent = events.find(e => e.status === 'error');
+    expect(errorEvent).toBeDefined();
+    expect(typeof errorEvent.status).toBe('string');
+    expect(typeof errorEvent.message).toBe('string');
+    expect(typeof errorEvent.progress).toBe('number');
+    expect(typeof errorEvent.error).toBe('object');
+    expect(typeof errorEvent.error.type).toBe('string');
+    expect(typeof errorEvent.error.details).toBe('string');
   });
 });

@@ -78,4 +78,74 @@ function collectSSE(url, body, { maxEvents = 50, timeoutMs = 30000 } = {}) {
   });
 }
 
-module.exports = { collectSSE };
+/**
+ * GET an SSE endpoint and collect all events until stream closes.
+ * @param {string} url - Full URL e.g. http://127.0.0.1:3001/api/audit-progress/session/abc/stream
+ * @param {object} opts - { maxEvents?: number, timeoutMs?: number }
+ * @returns {Promise<Array>} - Parsed JSON event objects
+ */
+function collectSSEGet(url, { maxEvents = 50, timeoutMs = 15000 } = {}) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const events = [];
+    let timer;
+
+    const req = http.request({
+      hostname: parsed.hostname,
+      port: parseInt(parsed.port),
+      path: parsed.pathname,
+      method: 'GET',
+      headers: { 'Accept': 'text/event-stream' }
+    }, (res) => {
+      let buffer = '';
+
+      res.on('data', (chunk) => {
+        buffer += chunk.toString();
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              events.push(data);
+
+              if (events.length >= maxEvents) {
+                req.destroy();
+                clearTimeout(timer);
+                resolve(events);
+                return;
+              }
+            } catch (_) { /* skip malformed lines */ }
+          }
+        }
+      });
+
+      res.on('end', () => {
+        clearTimeout(timer);
+        resolve(events);
+      });
+
+      res.on('error', (err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+    });
+
+    timer = setTimeout(() => {
+      req.destroy();
+      resolve(events);
+    }, timeoutMs);
+
+    req.on('error', (err) => {
+      if (err.code !== 'ECONNRESET') {
+        clearTimeout(timer);
+        reject(err);
+      }
+    });
+
+    req.end();
+  });
+}
+
+module.exports = { collectSSE, collectSSEGet };
