@@ -15,6 +15,7 @@ class ReportService {
         schemaScore: auditResult.auditResults.schemaCoverage.score,
         semanticScore: auditResult.auditResults.semanticStructure.score,
         contentScore: auditResult.auditResults.contentExtractability.score,
+        machineReadabilityScore: auditResult.auditResults.machineReadability?.score ?? 0,
         detectedIndustry: auditResult.metadata.detectedIndustry,
         duration: auditResult.duration,
         auditResults: JSON.stringify(auditResult.auditResults),

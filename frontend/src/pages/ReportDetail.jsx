@@ -8,7 +8,8 @@ const AUDIT_CATEGORIES = [
   { key: 'ssrReadiness', label: 'SSR Readiness', scoreField: 'ssrScore', icon: '🖥️' },
   { key: 'schemaCoverage', label: 'Schema Coverage', scoreField: 'schemaScore', icon: '🏷️' },
   { key: 'semanticStructure', label: 'Semantic Structure', scoreField: 'semanticScore', icon: '🏗️' },
-  { key: 'contentExtractability', label: 'Content Extractability', scoreField: 'contentScore', icon: '📄' }
+  { key: 'contentExtractability', label: 'Content Extractability', scoreField: 'contentScore', icon: '📄' },
+  { key: 'machineReadability', label: 'Machine Readability', scoreField: 'machineReadabilityScore', icon: '🤖' }
 ];
 
 export default function ReportDetail() {
@@ -45,7 +46,8 @@ export default function ReportDetail() {
     { label: 'SSR Readiness', value: report.ssrScore, key: 'ssr' },
     { label: 'Schema Coverage', value: report.schemaScore, key: 'schema' },
     { label: 'Semantic HTML', value: report.semanticScore, key: 'semantic' },
-    { label: 'Content Extract.', value: report.contentScore, key: 'content' }
+    { label: 'Content Extract.', value: report.contentScore, key: 'content' },
+    { label: 'Machine Readability', value: report.machineReadabilityScore, key: 'machine' }
   ];
 
   return (

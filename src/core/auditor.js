@@ -3,10 +3,12 @@ const SSRDetectionGatherer = require('../gatherers/ssr-detection');
 const StructuredDataGatherer = require('../gatherers/structured-data');
 const SemanticHTMLGatherer = require('../gatherers/semantic-html');
 const ContentAnalysisGatherer = require('../gatherers/content-analysis');
+const MachineReadabilityGatherer = require('../gatherers/machine-readability');
 const SSRReadinessAudit = require('../audits/ssr-readiness.audit');
 const SchemaCoverageAudit = require('../audits/schema-coverage.audit');
 const SemanticStructureAudit = require('../audits/semantic-structure.audit');
 const ContentExtractabilityAudit = require('../audits/content-extractability.audit');
+const MachineReadabilityAudit = require('../audits/machine-readability.audit');
 const LLMAnalyzer = require('../llm/analyzer');
 const Scorer = require('./scorer');
 const logger = require('../utils/logger');
@@ -21,14 +23,16 @@ class Auditor {
       ssr: new SSRDetectionGatherer(),
       structuredData: new StructuredDataGatherer(),
       semanticHTML: new SemanticHTMLGatherer(),
-      contentAnalysis: new ContentAnalysisGatherer()
+      contentAnalysis: new ContentAnalysisGatherer(),
+      machineReadability: new MachineReadabilityGatherer()
     };
 
     this.audits = {
       ssrReadiness: new SSRReadinessAudit(),
       schemaCoverage: new SchemaCoverageAudit(),
       semanticStructure: new SemanticStructureAudit(),
-      contentExtractability: new ContentExtractabilityAudit()
+      contentExtractability: new ContentExtractabilityAudit(),
+      machineReadability: new MachineReadabilityAudit()
     };
   }
 
@@ -126,18 +130,21 @@ class Auditor {
       onStep({ phase: 1, step: 'structuredData', message: 'Analyzing structured data...' });
       onStep({ phase: 1, step: 'semanticHTML', message: 'Analyzing semantic HTML...' });
       onStep({ phase: 1, step: 'contentAnalysis', message: 'Analyzing content...' });
+      onStep({ phase: 1, step: 'machineReadability', message: 'Analyzing machine readability...' });
       logger.info('Gathering other data in parallel...');
-      const [structuredData, semanticData, contentData] = await Promise.all([
+      const [structuredData, semanticData, contentData, machineReadabilityData] = await Promise.all([
         this.gatherers.structuredData.gather(url, page),
         this.gatherers.semanticHTML.gather(url, page),
-        this.gatherers.contentAnalysis.gather(url, page)
+        this.gatherers.contentAnalysis.gather(url, page),
+        this.gatherers.machineReadability.gather(url, page)
       ]);
 
       return {
         ssr: ssrData,
         structuredData,
         semanticHTML: semanticData,
-        contentAnalysis: contentData
+        contentAnalysis: contentData,
+        machineReadability: machineReadabilityData
       };
     } finally {
       await browser.close();
@@ -151,7 +158,8 @@ class Auditor {
       ssrReadiness: this.audits.ssrReadiness.audit(gatheredData.ssr),
       schemaCoverage: this.audits.schemaCoverage.audit(gatheredData.structuredData),
       semanticStructure: this.audits.semanticStructure.audit(gatheredData.semanticHTML),
-      contentExtractability: this.audits.contentExtractability.audit(gatheredData.contentAnalysis)
+      contentExtractability: this.audits.contentExtractability.audit(gatheredData.contentAnalysis),
+      machineReadability: this.audits.machineReadability.audit(gatheredData.machineReadability)
     };
 
     Object.keys(results).forEach((auditName) => {
@@ -198,7 +206,8 @@ class Auditor {
       ssrReadiness: 'ssr_analysis',
       schemaCoverage: 'schema_recommendations',
       semanticStructure: 'semantic_improvements',
-      contentExtractability: 'content_optimization'
+      contentExtractability: 'content_optimization',
+      machineReadability: 'machine_readability_recommendations'
     };
     return typeMap[auditName] || 'general';
   }

@@ -17,10 +17,11 @@ model Report {
   grade           String
 
   // Category scores
-  ssrScore        Int
-  schemaScore     Int
-  semanticScore   Int
-  contentScore    Int
+  ssrScore                Int
+  schemaScore             Int
+  semanticScore           Int
+  contentScore            Int
+  machineReadabilityScore Int  @default(0)
 
   // Metadata
   detectedIndustry String
