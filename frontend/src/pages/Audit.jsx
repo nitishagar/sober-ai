@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PhaseIndicator from '../components/PhaseIndicator';
 import './Audit.css';
 
@@ -13,14 +13,30 @@ export default function Audit() {
   const [elapsed, setElapsed] = useState(0);
   const [eta, setEta] = useState(null);
   const [llmReady, setLlmReady] = useState(null);   // null = checking
+  const [recentUrls, setRecentUrls] = useState([]);
   const timerRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.prefillUrl) {
+      setUrl(location.state.prefillUrl);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     fetch('/api/health')
       .then(r => r.json())
       .then(data => setLlmReady(data.services?.ollama === 'connected'))
       .catch(() => setLlmReady(false));
+
+    fetch('/api/reports?limit=20')
+      .then(r => r.json())
+      .then(data => {
+        const urls = [...new Set((data.reports || []).map(r => r.url))].slice(0, 5);
+        setRecentUrls(urls);
+      })
+      .catch(() => {});
   }, []);
 
   const startTimer = () => {
@@ -188,7 +204,13 @@ export default function Audit() {
               required
               disabled={loading}
               autoFocus
+              list={recentUrls.length > 0 ? 'recent-urls' : undefined}
             />
+            {recentUrls.length > 0 && (
+              <datalist id="recent-urls">
+                {recentUrls.map(u => <option key={u} value={u} />)}
+              </datalist>
+            )}
           </div>
 
           {error && <div className="error-message">{error}</div>}

@@ -13,7 +13,9 @@ const DEFAULTS = {
   ollama_model: 'qwen3:4b',
   ollama_api_key: '',
   openai_api_key: '',
-  openai_model: 'gpt-4o-mini'
+  openai_model: 'gpt-4o-mini',
+  anthropic_api_key: '',
+  anthropic_model: 'claude-haiku-4-5-20251001'
 };
 
 /**
@@ -37,6 +39,9 @@ router.get('/', async (req, res) => {
     if (masked.openai_api_key) {
       masked.openai_api_key = maskKey(masked.openai_api_key);
     }
+    if (masked.anthropic_api_key) {
+      masked.anthropic_api_key = maskKey(masked.anthropic_api_key);
+    }
 
     res.json(masked);
   } catch (error) {
@@ -59,7 +64,7 @@ router.put('/', async (req, res) => {
       if (!allowedKeys.includes(key)) continue;
 
       // Skip masked values (user didn't change the key)
-      if ((key === 'ollama_api_key' || key === 'openai_api_key') && isMasked(value)) {
+      if ((key === 'ollama_api_key' || key === 'openai_api_key' || key === 'anthropic_api_key') && isMasked(value)) {
         continue;
       }
 
@@ -129,6 +134,12 @@ async function loadProviderSettings() {
         provider: 'openai',
         apiKey: stored.openai_api_key || process.env.OPENAI_API_KEY || '',
         model: stored.openai_model || DEFAULTS.openai_model
+      };
+    case 'anthropic':
+      return {
+        provider: 'anthropic',
+        apiKey: stored.anthropic_api_key || process.env.ANTHROPIC_API_KEY || '',
+        model: stored.anthropic_model || DEFAULTS.anthropic_model
       };
     default:
       return {

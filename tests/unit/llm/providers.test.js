@@ -2,6 +2,7 @@ const axios = require('axios');
 const BaseProvider = require('../../../src/llm/providers/BaseProvider');
 const OllamaProvider = require('../../../src/llm/providers/OllamaProvider');
 const OpenAIProvider = require('../../../src/llm/providers/OpenAIProvider');
+const AnthropicProvider = require('../../../src/llm/providers/AnthropicProvider');
 const ProviderFactory = require('../../../src/llm/providers/ProviderFactory');
 
 jest.mock('axios');
@@ -220,6 +221,17 @@ describe('ProviderFactory', () => {
     expect(provider.name).toBe('openai');
   });
 
+  it('creates anthropic provider', () => {
+    const provider = ProviderFactory.create({
+      provider: 'anthropic',
+      apiKey: 'fake-test-key',
+      model: 'claude-haiku-4-5-20251001'
+    });
+    expect(provider).toBeInstanceOf(AnthropicProvider);
+    expect(provider.name).toBe('anthropic');
+    expect(provider.model).toBe('claude-haiku-4-5-20251001');
+  });
+
   it('falls back to ollama_local for unknown provider', () => {
     const provider = ProviderFactory.create({ provider: 'unknown' });
     expect(provider).toBeInstanceOf(OllamaProvider);
@@ -228,7 +240,55 @@ describe('ProviderFactory', () => {
 
   it('lists available providers', () => {
     const providers = ProviderFactory.listProviders();
-    expect(providers).toHaveLength(3);
-    expect(providers.map(p => p.id)).toEqual(['ollama_local', 'ollama_cloud', 'openai']);
+    expect(providers).toHaveLength(4);
+    expect(providers.map(p => p.id)).toEqual(['ollama_local', 'ollama_cloud', 'openai', 'anthropic']);
+  });
+});
+
+describe('AnthropicProvider', () => {
+  beforeEach(() => jest.resetAllMocks());
+
+  it('requires an API key', () => {
+    expect(() => new AnthropicProvider()).toThrow('API key is required');
+  });
+
+  it('defaults to claude-haiku-4-5-20251001', () => {
+    const provider = new AnthropicProvider({ apiKey: 'fake-test-key' });
+    expect(provider.model).toBe('claude-haiku-4-5-20251001');
+    expect(provider.endpoint).toBe('https://api.anthropic.com/v1');
+    expect(provider.name).toBe('anthropic');
+  });
+
+  it('generates non-streaming response', async () => {
+    axios.post.mockResolvedValue({
+      data: { content: [{ type: 'text', text: '{"result":"ok"}' }] }
+    });
+    const provider = new AnthropicProvider({ apiKey: 'fake-test-key' });
+    const result = await provider.generate('test prompt');
+    expect(result).toBe('{"result":"ok"}');
+    expect(axios.post).toHaveBeenCalledWith(
+      'https://api.anthropic.com/v1/messages',
+      expect.objectContaining({
+        model: 'claude-haiku-4-5-20251001',
+        messages: [{ role: 'user', content: 'test prompt' }],
+        stream: false
+      }),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'x-api-key': 'fake-test-key',
+          'anthropic-version': '2023-06-01'
+        })
+      })
+    );
+  });
+
+  it('reports invalid API key', async () => {
+    const error = new Error('Unauthorized');
+    error.response = { status: 401 };
+    axios.post.mockRejectedValue(error);
+    const provider = new AnthropicProvider({ apiKey: 'bad' });
+    const result = await provider.testConnection();
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('Invalid API key');
   });
 });

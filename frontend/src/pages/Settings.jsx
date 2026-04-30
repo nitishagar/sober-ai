@@ -174,6 +174,30 @@ export default function Settings() {
           </>
         )}
 
+        {settings.llm_provider === 'anthropic' && (
+          <>
+            <div className="settings-field">
+              <label>Anthropic API Key</label>
+              <input
+                type="password"
+                value={settings.anthropic_api_key}
+                onChange={e => handleChange('anthropic_api_key', e.target.value)}
+                placeholder="your Anthropic API key"
+              />
+            </div>
+
+            <div className="settings-field">
+              <label>Model</label>
+              <input
+                type="text"
+                value={settings.anthropic_model}
+                onChange={e => handleChange('anthropic_model', e.target.value)}
+                placeholder="claude-haiku-4-5-20251001"
+              />
+            </div>
+          </>
+        )}
+
         <div className="settings-actions">
           <button
             className="btn btn-secondary"
