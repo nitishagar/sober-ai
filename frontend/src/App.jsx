@@ -5,6 +5,8 @@ import Audit from './pages/Audit';
 import Reports from './pages/Reports';
 import ReportDetail from './pages/ReportDetail';
 import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
+import Compare from './pages/Compare';
 import Layout from './components/Layout';
 
 function App() {
@@ -17,6 +19,8 @@ function App() {
           <Route path="reports" element={<Reports />} />
           <Route path="reports/:id" element={<ReportDetail />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="compare/:id1/:id2" element={<Compare />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -107,8 +107,8 @@ describe('Settings API routes', () => {
       const res = await request(app).get('/api/settings/providers');
 
       expect(res.status).toBe(200);
-      expect(res.body).toHaveLength(3);
-      expect(res.body.map(p => p.id)).toEqual(['ollama_local', 'ollama_cloud', 'openai']);
+      expect(res.body).toHaveLength(4);
+      expect(res.body.map(p => p.id)).toEqual(['ollama_local', 'ollama_cloud', 'openai', 'anthropic']);
     });
   });
 });

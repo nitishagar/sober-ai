@@ -1,5 +1,6 @@
 const OllamaProvider = require('./OllamaProvider');
 const OpenAIProvider = require('./OpenAIProvider');
+const AnthropicProvider = require('./AnthropicProvider');
 const logger = require('../../utils/logger');
 
 class ProviderFactory {
@@ -40,6 +41,14 @@ class ProviderFactory {
           ...settings.options
         });
 
+      case 'anthropic':
+        return new AnthropicProvider({
+          apiKey: settings.apiKey || process.env.ANTHROPIC_API_KEY,
+          endpoint: settings.endpoint,
+          model: settings.model || 'claude-haiku-4-5-20251001',
+          ...settings.options
+        });
+
       default:
         logger.warn(`Unknown provider '${provider}', falling back to ollama_local`);
         return new OllamaProvider({
@@ -58,7 +67,8 @@ class ProviderFactory {
     return [
       { id: 'ollama_local', name: 'Ollama (Local)', requiresApiKey: false },
       { id: 'ollama_cloud', name: 'Ollama (Cloud)', requiresApiKey: true },
-      { id: 'openai', name: 'OpenAI', requiresApiKey: true }
+      { id: 'openai', name: 'OpenAI', requiresApiKey: true },
+      { id: 'anthropic', name: 'Anthropic (Claude)', requiresApiKey: true }
     ];
   }
 }

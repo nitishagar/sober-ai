@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import ScoreGauge from '../components/ScoreGauge';
 import { getScoreClass, getScoreColorHex } from '../utils/scoreUtils';
 import './ReportDetail.css';
@@ -14,9 +14,12 @@ const AUDIT_CATEGORIES = [
 
 export default function ReportDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [otherReports, setOtherReports] = useState([]);
 
   useEffect(() => {
     fetch(`/api/reports/${id}`)
@@ -28,6 +31,35 @@ export default function ReportDetail() {
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const openPicker = () => {
+    setShowPicker(true);
+    if (otherReports.length === 0) {
+      fetch('/api/reports?limit=50')
+        .then(r => r.json())
+        .then(d => setOtherReports((d.reports || []).filter(r => r.id !== id)))
+        .catch(() => {});
+    }
+  };
+
+  const handleReaudit = () => {
+    navigate('/audit', { state: { prefillUrl: report.url } });
+  };
+
+  const handleDownloadJson = () => {
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    let host = 'report';
+    try { host = new URL(report.url).hostname; } catch (_) {}
+    const stamp = new Date(report.createdAt).toISOString().replace(/[:.]/g, '-');
+    a.href = url;
+    a.download = `${host}-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) {
     return <div className="report-loading">Loading report...</div>;
@@ -61,6 +93,33 @@ export default function ReportDetail() {
             {new Date(report.createdAt).toLocaleString()} • {formatDuration(report.duration)}
             {report.detectedIndustry && ` • ${report.detectedIndustry}`}
           </p>
+          <div className="report-actions">
+            <button onClick={handleReaudit}>Re-audit this URL</button>
+            <button onClick={handleDownloadJson}>Download JSON</button>
+            <button onClick={openPicker}>Compare with…</button>
+          </div>
+          {showPicker && (
+            <div className="compare-picker">
+              <div className="compare-picker-header">
+                <strong>Select a report to compare</strong>
+                <button onClick={() => setShowPicker(false)}>Close</button>
+              </div>
+              {otherReports.length === 0 ? (
+                <p className="text-secondary">No other reports available.</p>
+              ) : (
+                <ul className="compare-picker-list">
+                  {otherReports.map(r => (
+                    <li key={r.id}>
+                      <Link to={`/compare/${id}/${r.id}`}>
+                        <span className="text-mono">{r.url}</span>
+                        <span className="text-secondary"> — {r.overallScore} ({r.grade})</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
         <div className="report-overall-gauge">
           <ScoreGauge score={report.overallScore} size={140} />

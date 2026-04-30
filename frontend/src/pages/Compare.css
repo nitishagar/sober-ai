@@ -1,0 +1,82 @@
+.compare-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.compare-header h1 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 8px 0 0 0;
+}
+
+.compare-loading {
+  padding: 40px;
+  text-align: center;
+}
+
+.compare-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.compare-column {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compare-column-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.compare-url {
+  word-break: break-all;
+}
+
+.compare-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.compare-deltas {
+  padding: 20px;
+}
+
+.compare-deltas h2 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 16px 0;
+}
+
+.delta-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.delta-row:last-child {
+  border-bottom: none;
+}
+
+.delta-label {
+  color: var(--text-secondary);
+}
+
+.delta-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.delta-up .delta-value { color: var(--score-green, #2e7d32); }
+.delta-down .delta-value { color: var(--score-red, #c62828); }
+.delta-zero .delta-value { color: var(--text-secondary); }
