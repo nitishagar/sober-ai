@@ -1,12 +1,26 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const Auditor = require('../../core/auditor');
 const reportService = require('../../services/reportService');
 const { loadProviderSettings } = require('./settings');
 const { validateAuditRequest } = require('../../utils/validator');
+const { isPrivateTarget } = require('../../utils/ssrf');
 const { EventEmitter } = require('events');
 const logger = require('../../utils/logger');
 
 const router = express.Router();
+
+// Per-IP rate limit on the audit POST route (invariant I). High enough default
+// (30/min) that the integration suite's sequential audits don't trip; env-tunable.
+const auditLimiter = rateLimit({
+  windowMs: 60_000,
+  max: Number(process.env.AUDIT_RATE_LIMIT) || 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({ error: 'Too many audit requests, please slow down.' });
+  }
+});
 
 // Store active audit sessions (state + emitter)
 const activeSessions = new Map();
@@ -137,7 +151,7 @@ router.get('/session/:sessionId/stream', (req, res) => {
  * POST /api/audit-progress
  * Start an audit with SSE progress updates
  */
-router.post('/', async (req, res) => {
+router.post('/', auditLimiter, async (req, res) => {
   const { url } = req.body;
 
   // Validate the request body (invariant I): reject missing/malformed/non-http(s) URLs
@@ -146,6 +160,15 @@ router.post('/', async (req, res) => {
   const validation = validateAuditRequest(req.body);
   if (!validation.valid) {
     return res.status(400).json({ error: validation.errors.join('; ') });
+  }
+
+  // SSRF guard (invariant I): block targets resolving to private/loopback/link-local
+  // IPs (e.g. cloud metadata at 169.254.169.254). Safe-by-default — rejects if ANY
+  // resolved IP is private (DNS-rebinding defense). Env-gated (SSRF_BLOCK_PRIVATE=0
+  // for local dev auditing internal URLs).
+  const ssrf = await isPrivateTarget(url);
+  if (ssrf.blocked) {
+    return res.status(400).json({ error: `Blocked: ${ssrf.reason}` });
   }
 
   console.log(`[API] Starting audit with progress for: ${url}`);
@@ -219,12 +242,25 @@ router.post('/', async (req, res) => {
       progress: 0
     });
 
-    // Load LLM provider settings from database and create auditor
+    // Build LLM provider settings for this request (invariant D: key isolation).
+    // When the caller supplies a BYO key via X-LLM-API-Key, construct the provider
+    // config from the request headers (never the global DB). Otherwise fall back to
+    // the persisted settings (desktop/local mode — unchanged behavior).
     let providerSettings = null;
-    try {
-      providerSettings = await loadProviderSettings();
-    } catch (err) {
-      console.log('[API] Using default LLM settings:', err.message);
+    const headerApiKey = req.get('X-LLM-API-Key');
+    if (headerApiKey) {
+      providerSettings = {
+        provider: req.get('X-LLM-Provider') || 'openai',
+        apiKey: headerApiKey,
+        endpoint: req.get('X-LLM-Endpoint') || undefined,
+        model: req.get('X-LLM-Model') || undefined
+      };
+    } else {
+      try {
+        providerSettings = await loadProviderSettings();
+      } catch (err) {
+        console.log('[API] Using default LLM settings:', err.message);
+      }
     }
     const auditor = new Auditor(req.config, providerSettings);
 
@@ -366,8 +402,8 @@ router.post('/', async (req, res) => {
     // Run the audit with explicit callbacks
     const auditResult = await auditor.audit(url, { onPhase, onStep, onLLMToken });
 
-    // Save report to database
-    const report = await reportService.createReport(auditResult);
+    // Save report to database (scope to this browser's owner token — invariant G)
+    const report = await reportService.createReport(auditResult, req.ownerToken);
 
     console.log(`[API] Audit completed, report ID: ${report.id}`);
 

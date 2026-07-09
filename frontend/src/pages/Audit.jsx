@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PhaseIndicator from '../components/PhaseIndicator';
+import { byoAuditHeaders } from '../utils/byoKey';
 import './Audit.css';
 
 export default function Audit() {
@@ -126,11 +127,15 @@ export default function Audit() {
     const completedRef = { current: false };
 
     try {
+      // In BYO mode, send the user's own key/endpoint/model via headers (invariant H/D).
+      // When BYO mode is off, byoAuditHeaders() returns null → no extra headers (current behavior).
+      const byoHeaders = byoAuditHeaders();
       const response = await fetch('/api/audit-progress', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'text/event-stream'
+          'Accept': 'text/event-stream',
+          ...(byoHeaders || {})
         },
         body: JSON.stringify({ url })
       });

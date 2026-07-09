@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class ReportService {
-  async createReport(auditResult) {
+  async createReport(auditResult, ownerToken = null) {
     console.log(`[Reports] Creating report for URL: ${auditResult.url}`);
 
     const report = await prisma.report.create({
@@ -19,21 +19,26 @@ class ReportService {
         detectedIndustry: auditResult.metadata.detectedIndustry,
         duration: auditResult.duration,
         auditResults: JSON.stringify(auditResult.auditResults),
-        recommendations: auditResult.recommendations ? JSON.stringify(auditResult.recommendations) : null
+        recommendations: auditResult.recommendations ? JSON.stringify(auditResult.recommendations) : null,
+        ownerToken: ownerToken || null
       }
     });
 
     return report;
   }
 
-  async getReports(options = {}) {
+  async getReports(options = {}, ownerToken = null) {
     const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc', search } = options;
 
-    const where = search ? {
-      url: {
-        contains: search
-      }
-    } : {};
+    const where = {};
+    if (search) {
+      where.url = { contains: search };
+    }
+    // Scope to the owner token when isolation is active (invariant G).
+    // null ownerToken → no filter (legacy/global visibility for local mode).
+    if (ownerToken) {
+      where.ownerToken = ownerToken;
+    }
 
     const [reports, total] = await Promise.all([
       prisma.report.findMany({
@@ -65,10 +70,15 @@ class ReportService {
     };
   }
 
-  async getReport(reportId) {
-    const report = await prisma.report.findUnique({
-      where: { id: reportId }
-    });
+  async getReport(reportId, ownerToken = null) {
+    // findUnique doesn't support compound filters on nullable columns cleanly, so
+    // use findFirst with the ownerToken in the where clause. A non-matching token
+    // returns null → 'Report not found' (no existence leak — invariant G edge).
+    const where = { id: reportId };
+    if (ownerToken) {
+      where.ownerToken = ownerToken;
+    }
+    const report = await prisma.report.findFirst({ where });
 
     if (!report) {
       throw new Error('Report not found');
@@ -84,14 +94,9 @@ class ReportService {
     };
   }
 
-  async deleteReport(reportId) {
-    const report = await prisma.report.findUnique({
-      where: { id: reportId }
-    });
-
-    if (!report) {
-      throw new Error('Report not found');
-    }
+  async deleteReport(reportId, ownerToken = null) {
+    // Reuse getReport so ownership is enforced (404 on mismatch, not 403).
+    await this.getReport(reportId, ownerToken);
 
     await prisma.report.delete({
       where: { id: reportId }
@@ -100,15 +105,19 @@ class ReportService {
     console.log(`[Reports] Report ${reportId} deleted`);
   }
 
-  async getReportStats() {
+  async getReportStats(ownerToken = null) {
+    const where = ownerToken ? { ownerToken } : {};
+
     const [totalReports, avgScore, scoreDistribution] = await Promise.all([
-      prisma.report.count(),
+      prisma.report.count({ where }),
       prisma.report.aggregate({
-        _avg: { overallScore: true }
+        _avg: { overallScore: true },
+        where
       }),
       prisma.report.groupBy({
         by: ['grade'],
-        _count: { grade: true }
+        _count: { grade: true },
+        where
       })
     ]);
 
@@ -122,10 +131,11 @@ class ReportService {
     };
   }
 
-  async compareReports(reportId1, reportId2) {
+  async compareReports(reportId1, reportId2, ownerToken = null) {
+    // getReport enforces ownership for each (404 on mismatch — no existence leak).
     const [report1, report2] = await Promise.all([
-      this.getReport(reportId1),
-      this.getReport(reportId2)
+      this.getReport(reportId1, ownerToken),
+      this.getReport(reportId2, ownerToken)
     ]);
 
     return {

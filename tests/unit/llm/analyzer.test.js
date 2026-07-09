@@ -168,4 +168,37 @@ describe('LLMAnalyzer', () => {
     expect(result.recommendations).toHaveLength(auditResult.findings.length);
     expect(result.summary).toContain('Failed to retrieve AI recommendations');
   });
+
+  // Invariant F (IMPLICIT_SPEC F / PLAN:65,305): a 429 from the provider — i.e.
+  // an NVIDIA free-trial rate-limit hit on a per-key BYO audit — must degrade to
+  // a fallback:true recommendation, not cascade or throw. OpenAIProvider.generate
+  // propagates the axios rejection as-is, so the analyzer sees an error shaped
+  // like { response: { status: 429, data: {...} }, message: 'Request failed with
+  // status code 429' }. The generic fallback test above (Connection refused) does
+  // NOT cover this case; a regression that re-threw 429 (e.g. a retry layer)
+  // would slip through it. This test pins the 429 path specifically.
+  it('degrades to fallback when the provider returns a 429 (rate limit)', async () => {
+    const rateLimitError = Object.assign(
+      new Error('Request failed with status code 429'),
+      {
+        response: {
+          status: 429,
+          data: { error: { message: 'Rate limit exceeded' } }
+        },
+        isAxiosError: true
+      }
+    );
+    axios.post.mockRejectedValue(rateLimitError);
+
+    const analyzer = new LLMAnalyzer();
+    const result = await analyzer.analyze(auditResult, 'content_optimization');
+
+    // The 429 must be swallowed and turned into a fallback, not propagated.
+    expect(result.fallback).toBe(true);
+    expect(result.recommendations).toHaveLength(auditResult.findings.length);
+    expect(result.summary).toContain('Failed to retrieve AI recommendations');
+    // Defense-in-depth: the error message surfaced in the fallback summary must
+    // carry the 429, so the failure is diagnosable without leaking a key.
+    expect(result.summary).toContain('429');
+  });
 });

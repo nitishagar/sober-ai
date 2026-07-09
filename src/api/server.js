@@ -17,6 +17,7 @@ const reportRouter = require('./routes/report');
 const batchRouter = require('./routes/batch');
 const statusRouter = require('./routes/status');
 const errorHandler = require('./middleware/error-handler');
+const { ownerTokenMiddleware } = require('./middleware/owner-token');
 const logger = require('../utils/logger');
 
 const app = express();
@@ -57,7 +58,13 @@ const loadConfig = () => {
 };
 
 // Middleware
-app.use(cors());
+// CORS allowlist (invariant J): when CORS_ORIGIN is set (comma-separated), restrict to
+// those origins for a split-origin cloud deployment. Unset → wildcard (preserves the
+// current permissive behavior for local/Electron same-origin dev).
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
+  : undefined;
+app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -84,6 +91,10 @@ app.use((req, res, next) => {
     });
   }
 });
+
+// Issue / read an ephemeral owner token for per-browser report isolation (invariant G).
+// Mounted before routes so req.ownerToken is available everywhere.
+app.use(ownerTokenMiddleware);
 
 // Health check endpoint — performs a real Ollama ping with 10s result cache
 app.get('/api/health', async (req, res) => {

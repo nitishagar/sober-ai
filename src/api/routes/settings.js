@@ -91,7 +91,20 @@ router.put('/', async (req, res) => {
  */
 router.post('/test-connection', async (req, res) => {
   try {
-    const settings = await loadProviderSettings();
+    // Dual contract (preserves the locked empty-body test): if the body carries a
+    // provider + apiKey, test that (BYO / "bring your own" connection test).
+    // Otherwise fall back to the persisted provider settings.
+    let settings;
+    if (req.body && req.body.provider && req.body.apiKey) {
+      settings = {
+        provider: req.body.provider,
+        apiKey: req.body.apiKey,
+        endpoint: req.body.endpoint || undefined,
+        model: req.body.model || undefined
+      };
+    } else {
+      settings = await loadProviderSettings();
+    }
     const provider = ProviderFactory.create(settings);
     const result = await provider.testConnection();
     res.json(result);

@@ -24,5 +24,7 @@ test('settings page exposes OpenAI custom Endpoint field for NVIDIA NIM (Phase 1
   await expect(endpointInput).toBeVisible();
 
   // The NVIDIA NIM hint is shown so users know what value to enter.
-  await expect(page.locator('.settings-hint')).toContainText('integrate.api.nvidia.com');
+  // Scope to the endpoint field's parent to avoid matching the BYO toggle hint.
+  const endpointField = endpointInput.locator('xpath=ancestor::div[contains(@class,"settings-field")]');
+  await expect(endpointField.locator('.settings-hint')).toContainText('integrate.api.nvidia.com');
 });

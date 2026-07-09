@@ -13,6 +13,9 @@ npm-debug.log*
 # Testing
 coverage/
 .nyc_output/
+/test-results/
+/playwright-report/
+/tests/e2e/.auth/
 
 # Editor
 .vscode/

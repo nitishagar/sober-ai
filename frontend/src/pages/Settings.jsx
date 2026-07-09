@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './Settings.css';
+import {
+  isByoMode,
+  setByoMode,
+  getByoSettings,
+  setByoSettings
+} from '../utils/byoKey';
 
 export default function Settings() {
   const [settings, setSettings] = useState(null);
@@ -10,8 +16,17 @@ export default function Settings() {
   const [testResult, setTestResult] = useState(null);
   const [llmStatus, setLlmStatus] = useState(null);
   const [message, setMessage] = useState(null);
+  // BYO mode: the browser holds the user's own key in sessionStorage (invariant H).
+  const [byoMode, setByoModeState] = useState(false);
+  const [byoSettings, setByoSettingsState] = useState(() => getByoSettings() || {
+    provider: 'openai',
+    apiKey: '',
+    endpoint: '',
+    model: ''
+  });
 
   useEffect(() => {
+    setByoModeState(isByoMode());
     Promise.all([
       fetch('/api/settings').then(r => r.json()),
       fetch('/api/settings/providers').then(r => r.json())
@@ -19,7 +34,7 @@ export default function Settings() {
       .then(([settingsData, providerData]) => {
         setSettings(settingsData);
         setProviders(providerData);
-        // Auto-test connection silently on load
+        // Auto-test connection silently on load (server-mode only)
         return fetch('/api/settings/test-connection', { method: 'POST' });
       })
       .then(r => r.json())
@@ -28,12 +43,35 @@ export default function Settings() {
       .finally(() => setLoading(false));
   }, []);
 
+  const toggleByoMode = (enabled) => {
+    setByoMode(enabled);
+    setByoModeState(enabled);
+    setTestResult(null);
+    setLlmStatus(null);
+  };
+
   const handleChange = (key, value) => {
     setSettings(prev => ({ ...prev, [key]: value }));
     setTestResult(null);
   };
 
+  const handleByoChange = (key, value) => {
+    setByoSettingsState(prev => {
+      const next = { ...prev, [key]: value };
+      // Persist to sessionStorage immediately (invariant H: key stays in the browser).
+      setByoSettings(next);
+      return next;
+    });
+    setTestResult(null);
+  };
+
   const handleSave = async () => {
+    // In BYO mode the key never round-trips to the server — saving is client-side.
+    if (byoMode) {
+      setByoSettings(byoSettings);
+      setMessage({ type: 'success', text: 'BYO settings saved to this browser session.' });
+      return;
+    }
     setSaving(true);
     setMessage(null);
     try {
@@ -59,7 +97,22 @@ export default function Settings() {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch('/api/settings/test-connection', { method: 'POST' });
+      let res;
+      if (byoMode) {
+        // Test the BYO provider from the body (does not persist the key server-side).
+        res = await fetch('/api/settings/test-connection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider: byoSettings.provider,
+            apiKey: byoSettings.apiKey,
+            endpoint: byoSettings.endpoint,
+            model: byoSettings.model
+          })
+        });
+      } else {
+        res = await fetch('/api/settings/test-connection', { method: 'POST' });
+      }
       const data = await res.json();
       setTestResult(data);
     } catch (err) {
@@ -77,7 +130,10 @@ export default function Settings() {
     return <div className="settings-page"><div className="settings-error">Failed to load settings</div></div>;
   }
 
-  const currentProvider = providers.find(p => p.id === settings.llm_provider) || providers[0];
+  // In BYO mode, source the editable provider/key/endpoint/model from byoSettings;
+  // otherwise from the server settings.
+  const activeProvider = byoMode ? byoSettings.provider : settings.llm_provider;
+  const currentProvider = providers.find(p => p.id === activeProvider) || providers[0];
 
   return (
     <div className="settings-page">
@@ -102,11 +158,36 @@ export default function Settings() {
           Configure which AI model provider to use for generating audit recommendations.
         </p>
 
+        <div className="settings-field settings-field--toggle">
+          <label>
+            <input
+              type="checkbox"
+              checked={byoMode}
+              onChange={e => toggleByoMode(e.target.checked)}
+              aria-label="Toggle bring-your-own-key mode"
+            />
+            {' '}Bring Your Own Key (this browser only)
+          </label>
+          <small className="settings-hint">
+            {byoMode
+              ? 'Your key is stored only in this browser session (sessionStorage) and sent per-request. It is never saved on the server.'
+              : 'Store provider settings on the server. Enable to use your own key (e.g. NVIDIA NIM) without saving it server-side.'}
+          </small>
+        </div>
+
+        {byoMode && (
+          <div className="settings-message settings-message--info">
+            BYO mode is on: provider, key, endpoint and model below are held in this browser only.
+          </div>
+        )}
+
         <div className="settings-field">
           <label>Provider</label>
           <select
-            value={settings.llm_provider}
-            onChange={e => handleChange('llm_provider', e.target.value)}
+            value={activeProvider}
+            onChange={e => (byoMode
+              ? handleByoChange('provider', e.target.value)
+              : handleChange('llm_provider', e.target.value))}
           >
             {providers.map(p => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -114,7 +195,7 @@ export default function Settings() {
           </select>
         </div>
 
-        {(settings.llm_provider === 'ollama_local' || settings.llm_provider === 'ollama_cloud') && (
+        {(activeProvider === 'ollama_local' || activeProvider === 'ollama_cloud') && !byoMode && (
           <>
             <div className="settings-field">
               <label>Ollama Endpoint</label>
@@ -138,7 +219,7 @@ export default function Settings() {
           </>
         )}
 
-        {settings.llm_provider === 'ollama_cloud' && (
+        {activeProvider === 'ollama_cloud' && !byoMode && (
           <div className="settings-field">
             <label>Ollama API Key</label>
             <input
@@ -150,15 +231,15 @@ export default function Settings() {
           </div>
         )}
 
-        {settings.llm_provider === 'openai' && (
+        {byoMode ? (
           <>
             <div className="settings-field">
-              <label>OpenAI API Key</label>
+              <label>API Key</label>
               <input
                 type="password"
-                value={settings.openai_api_key}
-                onChange={e => handleChange('openai_api_key', e.target.value)}
-                placeholder="sk-..."
+                value={byoSettings.apiKey}
+                onChange={e => handleByoChange('apiKey', e.target.value)}
+                placeholder="Your API key (kept in this browser only)"
               />
             </div>
 
@@ -166,12 +247,12 @@ export default function Settings() {
               <label>Endpoint</label>
               <input
                 type="text"
-                value={settings.openai_endpoint}
-                onChange={e => handleChange('openai_endpoint', e.target.value)}
-                placeholder="https://api.openai.com/v1"
+                value={byoSettings.endpoint}
+                onChange={e => handleByoChange('endpoint', e.target.value)}
+                placeholder="https://integrate.api.nvidia.com/v1"
               />
               <small className="settings-hint">
-                Use <code>https://integrate.api.nvidia.com/v1</code> for NVIDIA NIM. Defaults to the OpenAI API when empty.
+                Use <code>https://integrate.api.nvidia.com/v1</code> for NVIDIA NIM. Leave empty for the provider default.
               </small>
             </div>
 
@@ -179,35 +260,74 @@ export default function Settings() {
               <label>Model</label>
               <input
                 type="text"
-                value={settings.openai_model}
-                onChange={e => handleChange('openai_model', e.target.value)}
-                placeholder="gpt-4o-mini"
+                value={byoSettings.model}
+                onChange={e => handleByoChange('model', e.target.value)}
+                placeholder="e.g. meta/llama-3.1-8b-instruct"
               />
             </div>
           </>
-        )}
-
-        {settings.llm_provider === 'anthropic' && (
+        ) : (
           <>
-            <div className="settings-field">
-              <label>Anthropic API Key</label>
-              <input
-                type="password"
-                value={settings.anthropic_api_key}
-                onChange={e => handleChange('anthropic_api_key', e.target.value)}
-                placeholder="your Anthropic API key"
-              />
-            </div>
+            {settings.llm_provider === 'openai' && (
+              <>
+                <div className="settings-field">
+                  <label>OpenAI API Key</label>
+                  <input
+                    type="password"
+                    value={settings.openai_api_key}
+                    onChange={e => handleChange('openai_api_key', e.target.value)}
+                    placeholder="sk-..."
+                  />
+                </div>
 
-            <div className="settings-field">
-              <label>Model</label>
-              <input
-                type="text"
-                value={settings.anthropic_model}
-                onChange={e => handleChange('anthropic_model', e.target.value)}
-                placeholder="claude-haiku-4-5-20251001"
-              />
-            </div>
+                <div className="settings-field">
+                  <label>Endpoint</label>
+                  <input
+                    type="text"
+                    value={settings.openai_endpoint}
+                    onChange={e => handleChange('openai_endpoint', e.target.value)}
+                    placeholder="https://api.openai.com/v1"
+                  />
+                  <small className="settings-hint">
+                    Use <code>https://integrate.api.nvidia.com/v1</code> for NVIDIA NIM. Defaults to the OpenAI API when empty.
+                  </small>
+                </div>
+
+                <div className="settings-field">
+                  <label>Model</label>
+                  <input
+                    type="text"
+                    value={settings.openai_model}
+                    onChange={e => handleChange('openai_model', e.target.value)}
+                    placeholder="gpt-4o-mini"
+                  />
+                </div>
+              </>
+            )}
+
+            {settings.llm_provider === 'anthropic' && (
+              <>
+                <div className="settings-field">
+                  <label>Anthropic API Key</label>
+                  <input
+                    type="password"
+                    value={settings.anthropic_api_key}
+                    onChange={e => handleChange('anthropic_api_key', e.target.value)}
+                    placeholder="your Anthropic API key"
+                  />
+                </div>
+
+                <div className="settings-field">
+                  <label>Model</label>
+                  <input
+                    type="text"
+                    value={settings.anthropic_model}
+                    onChange={e => handleChange('anthropic_model', e.target.value)}
+                    placeholder="claude-haiku-4-5-20251001"
+                  />
+                </div>
+              </>
+            )}
           </>
         )}
 

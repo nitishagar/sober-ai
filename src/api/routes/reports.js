@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
       sortBy: sortBy || 'createdAt',
       sortOrder: sortOrder || 'desc',
       search
-    });
+    }, req.ownerToken);
 
     return res.json(result);
   } catch (error) {
@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
  */
 router.get('/stats', async (req, res) => {
   try {
-    const stats = await reportService.getReportStats();
+    const stats = await reportService.getReportStats(req.ownerToken);
     return res.json(stats);
   } catch (error) {
     console.error('[API] Failed to get stats:', error);
@@ -48,7 +48,8 @@ router.get('/compare/:id1/:id2', async (req, res) => {
   try {
     const comparison = await reportService.compareReports(
       req.params.id1,
-      req.params.id2
+      req.params.id2,
+      req.ownerToken
     );
     return res.json(comparison);
   } catch (error) {
@@ -63,7 +64,7 @@ router.get('/compare/:id1/:id2', async (req, res) => {
  */
 router.get('/:reportId', async (req, res) => {
   try {
-    const report = await reportService.getReport(req.params.reportId);
+    const report = await reportService.getReport(req.params.reportId, req.ownerToken);
     return res.json(report);
   } catch (error) {
     console.error('[API] Failed to get report:', error);
@@ -77,7 +78,7 @@ router.get('/:reportId', async (req, res) => {
  */
 router.delete('/:reportId', async (req, res) => {
   try {
-    await reportService.deleteReport(req.params.reportId);
+    await reportService.deleteReport(req.params.reportId, req.ownerToken);
     return res.json({ message: 'Report deleted' });
   } catch (error) {
     console.error('[API] Failed to delete report:', error);

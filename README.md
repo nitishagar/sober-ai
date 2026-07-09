@@ -106,11 +106,19 @@ npm run test:unit     # Unit tests only
 npm run test:integration  # Integration tests only
 npm run test:ci       # CI mode (all tests, force exit)
 npm run verify        # Run tests + lint
+npm run test:e2e      # Playwright E2E tests (browser)
+npm run verify:full   # Unit + integration + lint + E2E
+```
+
+First-time E2E setup (installs Chromium, ~400MB):
+```bash
+npm run test:e2e:install
 ```
 
 The test suite covers:
 - **Unit tests**: All 5 audit classes (score boundaries, severity, findings), scorer, validator, LLM analyzer, provider factory
 - **Integration tests**: SSE streaming (reconnect, error paths), audit pipeline, settings, reports (CRUD + compare), provider routing, health
+- **E2E tests**: Audit happy-path (real SSE + DB), reports list/detail, health banner, SSE reconnect branch (`tests/e2e/`)
 
 ## Documentation
 

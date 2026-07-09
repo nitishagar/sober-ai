@@ -7,7 +7,7 @@ const http = require('http');
  * @param {object} opts - { maxEvents?: number, timeoutMs?: number }
  * @returns {Promise<Array>} - Parsed JSON event objects
  */
-function collectSSE(url, body, { maxEvents = 50, timeoutMs = 30000 } = {}) {
+function collectSSE(url, body, { maxEvents = 50, timeoutMs = 30000, headers = {} } = {}) {
   return new Promise((resolve, reject) => {
     const parsed = new URL(url);
     const payload = JSON.stringify(body);
@@ -22,7 +22,8 @@ function collectSSE(url, body, { maxEvents = 50, timeoutMs = 30000 } = {}) {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'text/event-stream',
-        'Content-Length': Buffer.byteLength(payload)
+        'Content-Length': Buffer.byteLength(payload),
+        ...headers
       }
     }, (res) => {
       let buffer = '';

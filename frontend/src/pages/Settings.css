@@ -106,6 +106,30 @@
   border-radius: 4px;
 }
 
+.settings-field--toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--surface-alt, #f8fafc);
+}
+
+.settings-field--toggle label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings-message--info {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.3);
+  color: var(--text-primary, #1a1a2e);
+}
+
 .settings-actions {
   display: flex;
   gap: 0.75rem;

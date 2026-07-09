@@ -31,11 +31,16 @@ model Report {
   auditResults    String
   recommendations String?
 
+  // Ephemeral owner token for per-browser report isolation (invariant G).
+  // Nullable: null = legacy/global visibility (desktop/local single-user unaffected).
+  ownerToken      String?
+
   // Timestamps
   createdAt       DateTime  @default(now())
 
   @@index([url])
   @@index([createdAt])
+  @@index([ownerToken])
 }
 
 model Settings {
