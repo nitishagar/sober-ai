@@ -163,6 +163,19 @@ export default function Settings() {
             </div>
 
             <div className="settings-field">
+              <label>Endpoint</label>
+              <input
+                type="text"
+                value={settings.openai_endpoint}
+                onChange={e => handleChange('openai_endpoint', e.target.value)}
+                placeholder="https://api.openai.com/v1"
+              />
+              <small className="settings-hint">
+                Use <code>https://integrate.api.nvidia.com/v1</code> for NVIDIA NIM. Defaults to the OpenAI API when empty.
+              </small>
+            </div>
+
+            <div className="settings-field">
               <label>Model</label>
               <input
                 type="text"

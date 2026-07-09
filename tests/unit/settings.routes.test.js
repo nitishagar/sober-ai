@@ -61,6 +61,30 @@ describe('Settings API routes', () => {
       const res = await request(app).get('/api/settings');
       expect(res.body.openai_api_key).toBe('****');
     });
+
+    it('returns openai_endpoint default and does NOT mask it', async () => {
+      mockFindMany.mockResolvedValue([
+        { key: 'llm_provider', value: 'openai' },
+        { key: 'openai_endpoint', value: 'https://integrate.api.nvidia.com/v1' },
+        { key: 'openai_api_key', value: 'nvapi-abcdef1234567890' }
+      ]);
+
+      const res = await request(app).get('/api/settings');
+
+      expect(res.status).toBe(200);
+      // Endpoint is present and NOT masked (it is not a secret)
+      expect(res.body.openai_endpoint).toBe('https://integrate.api.nvidia.com/v1');
+      // API key still masked alongside the endpoint
+      expect(res.body.openai_api_key).toBe('nvap****7890');
+    });
+
+    it('includes openai_endpoint in defaults when database is empty', async () => {
+      mockFindMany.mockResolvedValue([]);
+
+      const res = await request(app).get('/api/settings');
+
+      expect(res.body.openai_endpoint).toBe('');
+    });
   });
 
   describe('PUT /api/settings', () => {
@@ -109,6 +133,51 @@ describe('Settings API routes', () => {
       expect(res.status).toBe(200);
       expect(res.body).toHaveLength(4);
       expect(res.body.map(p => p.id)).toEqual(['ollama_local', 'ollama_cloud', 'openai', 'anthropic']);
+    });
+  });
+
+  describe('loadProviderSettings', () => {
+    const { loadProviderSettings } = settingsRouter;
+
+    it('openai branch includes endpoint when set', async () => {
+      mockFindMany.mockResolvedValue([
+        { key: 'llm_provider', value: 'openai' },
+        { key: 'openai_endpoint', value: 'https://integrate.api.nvidia.com/v1' },
+        { key: 'openai_api_key', value: 'nvapi-testkey1234' },
+        { key: 'openai_model', value: 'meta/llama-3.1-8b-instruct' }
+      ]);
+
+      const settings = await loadProviderSettings();
+
+      expect(settings.provider).toBe('openai');
+      expect(settings.endpoint).toBe('https://integrate.api.nvidia.com/v1');
+      expect(settings.apiKey).toBe('nvapi-testkey1234');
+      expect(settings.model).toBe('meta/llama-3.1-8b-instruct');
+    });
+
+    it('openai branch omits endpoint (undefined) when not configured', async () => {
+      mockFindMany.mockResolvedValue([
+        { key: 'llm_provider', value: 'openai' },
+        { key: 'openai_api_key', value: 'nvapi-testkey1234' }
+      ]);
+
+      const settings = await loadProviderSettings();
+
+      expect(settings.provider).toBe('openai');
+      // No endpoint configured → undefined so OpenAIProvider falls back to its own default
+      expect(settings.endpoint).toBeUndefined();
+    });
+
+    it('other branches keep working (no regression): ollama_cloud forwards endpoint', async () => {
+      mockFindMany.mockResolvedValue([
+        { key: 'llm_provider', value: 'ollama_cloud' },
+        { key: 'ollama_endpoint', value: 'https://api.ollama.com' }
+      ]);
+
+      const settings = await loadProviderSettings();
+
+      expect(settings.provider).toBe('ollama_cloud');
+      expect(settings.endpoint).toBe('https://api.ollama.com');
     });
   });
 });

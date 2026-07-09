@@ -31,6 +31,20 @@ describe('Settings API', () => {
     expect(get.body.ollama_model).toBe('llama3:8b');
   });
 
+  it('PUT /api/settings persists openai_endpoint and GET returns it unmasked', async () => {
+    const res = await request(app)
+      .put('/api/settings')
+      .send({ llm_provider: 'openai', openai_endpoint: 'https://integrate.api.nvidia.com/v1' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.updated).toContain('openai_endpoint');
+
+    // Verify persisted + not masked (endpoint is not a secret)
+    const get = await request(app).get('/api/settings');
+    expect(get.body.openai_endpoint).toBe('https://integrate.api.nvidia.com/v1');
+    expect(get.body.openai_endpoint).not.toMatch(/\*+/);
+  });
+
   it('POST /api/settings/test-connection succeeds with stub Ollama', async () => {
     const res = await request(app)
       .post('/api/settings/test-connection')

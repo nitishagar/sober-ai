@@ -2,7 +2,9 @@ const express = require('express');
 const Auditor = require('../../core/auditor');
 const reportService = require('../../services/reportService');
 const { loadProviderSettings } = require('./settings');
+const { validateAuditRequest } = require('../../utils/validator');
 const { EventEmitter } = require('events');
+const logger = require('../../utils/logger');
 
 const router = express.Router();
 
@@ -138,8 +140,12 @@ router.get('/session/:sessionId/stream', (req, res) => {
 router.post('/', async (req, res) => {
   const { url } = req.body;
 
-  if (!url) {
-    return res.status(400).json({ error: 'URL is required' });
+  // Validate the request body (invariant I): reject missing/malformed/non-http(s) URLs
+  // before doing any work. validateAuditRequest is the existing pattern used by the
+  // sibling audit routes (audit.js:16, audit-mvp.js:15).
+  const validation = validateAuditRequest(req.body);
+  if (!validation.valid) {
+    return res.status(400).json({ error: validation.errors.join('; ') });
   }
 
   console.log(`[API] Starting audit with progress for: ${url}`);
@@ -402,7 +408,9 @@ router.post('/', async (req, res) => {
     }, 1000);
 
   } catch (error) {
-    console.error(`[API] Audit failed for ${url}:`, error);
+    // Route through the logger so secret redaction (invariant C) applies — a
+    // key-bearing axios error reaching this sink must not leak the bearer token.
+    logger.error(`[API] Audit failed for ${url}:`, error);
 
     // Determine error type for better messaging
     let errorMessage = 'Audit failed';

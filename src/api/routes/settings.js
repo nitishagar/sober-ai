@@ -12,6 +12,7 @@ const DEFAULTS = {
   ollama_endpoint: 'http://localhost:11434',
   ollama_model: 'qwen3:4b',
   ollama_api_key: '',
+  openai_endpoint: '',
   openai_api_key: '',
   openai_model: 'gpt-4o-mini',
   anthropic_api_key: '',
@@ -133,6 +134,7 @@ async function loadProviderSettings() {
       return {
         provider: 'openai',
         apiKey: stored.openai_api_key || process.env.OPENAI_API_KEY || '',
+        endpoint: stored.openai_endpoint || undefined,
         model: stored.openai_model || DEFAULTS.openai_model
       };
     case 'anthropic':
