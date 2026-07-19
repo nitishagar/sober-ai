@@ -7,7 +7,7 @@ test('delete removes a report row', async ({ page }) => {
   const a = await seedReport({ url: 'https://keep.example.com' });
   await seedReport({ url: 'https://remove.example.com' });
 
-  await page.goto('/reports');
+  await page.goto('/app/reports');
   await expect(page.locator('.table-row')).toHaveCount(2);
 
   page.once('dialog', dialog => dialog.accept());
@@ -23,7 +23,7 @@ test('search filters reports by URL', async ({ page }) => {
   await seedReport({ url: 'https://foo.example.com' });
   await seedReport({ url: 'https://bar.example.com' });
 
-  await page.goto('/reports');
+  await page.goto('/app/reports');
   await expect(page.locator('.table-row')).toHaveCount(2);
 
   await page.locator('.search-input').fill('foo');

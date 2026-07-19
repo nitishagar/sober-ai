@@ -1,18 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SoberAI Documentation</title>
-  <meta name="description" content="SoberAI - Lighthouse for the AI Age">
+  <title>SoberAI Docs — Lighthouse for the AI age</title>
+  <meta name="description" content="SoberAI scores how readable your website is to machines — across SSR, Schema, Semantic, Content, and Machine Readability. Open source, local-first.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230a0a0a'/%3E%3Crect x='1' y='1' width='62' height='62' rx='11' fill='none' stroke='%232e2e2e' stroke-width='2'/%3E%3Cpath d='M14 18 L28 32 L14 46' fill='none' stroke='%234ade80' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='33' y='40' width='17' height='5' rx='2.5' fill='%234ade80'/%3E%3C/svg%3E">
+
+  <!-- Base docsify theme (dark) provides structural layout: sidebar, search,
+       code blocks. theme.css loads AFTER it to recolor/retype only. Do NOT
+       remove the base theme link — dropping it breaks the docs shell. -->
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/dark.css">
+  <link rel="stylesheet" href="theme.css">
 </head>
 <body>
   <div id="app"></div>
   <script>
     window.$docsify = {
-      name: 'SoberAI',
+      name: '[sober_ai]',
+      nameLink: '/#/',
       repo: 'nitishagar/sober-ai',
+      themeColor: '#4ade80',
       loadSidebar: true,
       maxLevel: 4,
       subMaxLevel: 2,

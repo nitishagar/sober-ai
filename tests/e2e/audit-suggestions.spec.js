@@ -8,7 +8,7 @@ test('audit form populates datalist from recent reports', async ({ page }) => {
   await seedReport({ url: 'https://b.example.com' });
   await seedReport({ url: 'https://c.example.com' });
 
-  await page.goto('/audit');
+  await page.goto('/app/audit');
 
   const input = page.locator('input[type="url"]');
   await expect(input).toHaveAttribute('list', 'recent-urls');

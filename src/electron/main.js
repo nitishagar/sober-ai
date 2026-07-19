@@ -76,7 +76,7 @@ async function createWindow() {
     }
   });
 
-  mainWindow.loadURL(`http://localhost:${port}`);
+  mainWindow.loadURL(`http://localhost:${port}/app`);
 
   mainWindow.on('closed', () => {
     mainWindow = null;

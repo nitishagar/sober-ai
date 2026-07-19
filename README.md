@@ -19,7 +19,7 @@ With 1 billion+ monthly AI crawler requests (GPTBot, ClaudeBot, PerplexityBot), 
 
 | Category | Weight | Description |
 |----------|--------|-------------|
-| SSR Readiness | 20% | Server-side rendering for AI agents that don't execute JavaScript |
+| SSR Readiness | 25% | Server-side rendering for AI agents that don't execute JavaScript |
 | Schema Coverage | 20% | Structured data (Schema.org) for AI understanding |
 | Semantic Structure | 20% | HTML5 semantic elements and heading hierarchy |
 | Content Extractability | 20% | Text readability and accessibility for LLMs |
@@ -101,7 +101,7 @@ Electron Shell
 ## Testing
 
 ```bash
-npm test              # Run all tests (185 tests, 18 suites)
+npm test              # Run all tests (235 tests, 23 suites)
 npm run test:unit     # Unit tests only
 npm run test:integration  # Integration tests only
 npm run test:ci       # CI mode (all tests, force exit)

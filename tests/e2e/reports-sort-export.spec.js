@@ -8,7 +8,7 @@ test('reports list supports sort, page-size, and CSV export', async ({ page }) =
   await seedReport({ url: 'https://alpha.example.com', overallScore: 55, grade: 'D' });
   await seedReport({ url: 'https://mid.example.com', overallScore: 75, grade: 'C' });
 
-  await page.goto('/reports');
+  await page.goto('/app/reports');
   await expect(page.locator('.table-row')).toHaveCount(3);
 
   // Click Score header: asc

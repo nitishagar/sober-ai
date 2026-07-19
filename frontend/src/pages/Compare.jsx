@@ -31,7 +31,7 @@ function ReportColumn({ report, title }) {
         <div><span className="text-secondary">Grade:</span> <strong>{report.grade}</strong></div>
         <div><span className="text-secondary">Date:</span> {new Date(report.createdAt).toLocaleString()}</div>
       </div>
-      <Link to={`/reports/${report.id}`}>View full report →</Link>
+      <Link to={`/app/reports/${report.id}`}>View full report →</Link>
     </div>
   );
 }
@@ -58,7 +58,7 @@ export default function Compare() {
     return (
       <div className="compare-loading">
         <p>{error || 'Comparison not found'}</p>
-        <Link to="/reports" className="back-link">← Back to Reports</Link>
+        <Link to="/app/reports" className="back-link">← Back to Reports</Link>
       </div>
     );
   }
@@ -68,7 +68,7 @@ export default function Compare() {
   return (
     <div className="compare-page">
       <div className="compare-header">
-        <Link to="/reports" className="back-link">← Back to Reports</Link>
+        <Link to="/app/reports" className="back-link">← Back to Reports</Link>
         <h1>Compare Reports</h1>
       </div>
 

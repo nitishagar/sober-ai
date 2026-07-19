@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 test('settings page exposes Anthropic provider option and fields', async ({ page }) => {
-  await page.goto('/settings');
+  await page.goto('/app/settings');
 
   const providerSelect = page.locator('select').first();
   await expect(providerSelect.locator('option[value="anthropic"]')).toHaveText('Anthropic (Claude)');
@@ -13,7 +13,7 @@ test('settings page exposes Anthropic provider option and fields', async ({ page
 });
 
 test('settings page exposes OpenAI custom Endpoint field for NVIDIA NIM (Phase 1)', async ({ page }) => {
-  await page.goto('/settings');
+  await page.goto('/app/settings');
 
   const providerSelect = page.locator('select').first();
   await providerSelect.selectOption('openai');

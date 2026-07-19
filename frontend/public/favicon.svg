@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="12" fill="#0a0a0a"/>
+  <rect x="1" y="1" width="62" height="62" rx="11" fill="none" stroke="#2e2e2e" stroke-width="2"/>
+  <!-- terminal prompt: > -->
+  <path d="M14 18 L28 32 L14 46" fill="none" stroke="#4ade80" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- cursor underscore -->
+  <rect x="33" y="40" width="17" height="5" rx="2.5" fill="#4ade80"/>
+</svg>

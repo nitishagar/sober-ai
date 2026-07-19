@@ -32,7 +32,7 @@ export default function Dashboard() {
     <div className="dashboard">
       <div className="dashboard-header">
         <h1>Dashboard</h1>
-        <Link to="/audit">
+        <Link to="/app/audit">
           <button className="primary">New Audit</button>
         </Link>
       </div>
@@ -88,7 +88,7 @@ export default function Dashboard() {
         ) : (
           <div className="reports-list">
             {recentReports.map(report => (
-              <Link key={report.id} to={`/reports/${report.id}`} className="report-row">
+              <Link key={report.id} to={`/app/reports/${report.id}`} className="report-row">
                 <div className="report-url text-mono">{report.url}</div>
                 <div className="report-meta">
                   <span

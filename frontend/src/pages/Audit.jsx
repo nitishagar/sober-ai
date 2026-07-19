@@ -83,7 +83,7 @@ export default function Audit() {
               setCurrentPhase(4);
               setEta(null);
               stopTimer();
-              setTimeout(() => navigate(`/reports/${data.reportId}`), 1000);
+              setTimeout(() => navigate(`/app/reports/${data.reportId}`), 1000);
               return;
             } else if (data.status === 'error') {
               completedRef.current = true;

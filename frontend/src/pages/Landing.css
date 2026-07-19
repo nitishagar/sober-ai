@@ -1,0 +1,388 @@
+/*
+ * Landing styles — opencode-inspired dark/terminal aesthetic.
+ *
+ * INV-8 (dark scope boundary): ALL dark tokens live under the `.landing`
+ * selector. There are NO body/html/:root color overrides here — the app's
+ * light tokens in index.css stay untouched. The `.landing` wrapper sets
+ * `min-height: 100vh` and its own dark background so the white body/#root
+ * behind it never shows as an edge on tall viewports. Any accent override is
+ * declared inside `.landing`, never reassigned on :root.
+ */
+
+.landing {
+  /* Dark tokens — local to .landing only. */
+  --ln-bg: #0a0a0a;
+  --ln-bg-elev: #111111;
+  --ln-bg-elev-2: #161616;
+  --ln-border: #232323;
+  --ln-border-strong: #2e2e2e;
+  --ln-text: #ededed;
+  --ln-text-muted: #8a8a8a;
+  --ln-text-dim: #5c5c5c;
+  --ln-accent: #4ade80;          /* opencode-ish green; local override */
+  --ln-accent-dim: rgba(74, 222, 128, 0.12);
+  --ln-font-mono: var(--font-mono); /* reuses the app's mono stack */
+
+  min-height: 100vh;
+  background: var(--ln-bg);
+  color: var(--ln-text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+.landing a {
+  color: var(--ln-text);
+  text-decoration: none;
+}
+.landing a:hover {
+  color: var(--ln-accent);
+}
+
+/* ---------- Header ---------- */
+
+.landing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--ln-border);
+  position: sticky;
+  top: 0;
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+.landing-wordmark {
+  font-family: var(--ln-font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ln-text);
+}
+.landing-wordmark-bracket {
+  color: var(--ln-text-dim);
+}
+.landing-wordmark-accent {
+  color: var(--ln-accent);
+}
+
+.landing-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-family: var(--ln-font-mono);
+  font-size: 13px;
+}
+.landing-nav-cta {
+  padding: 6px 12px;
+  border: 1px solid var(--ln-border-strong);
+  border-radius: 4px;
+}
+.landing-nav-cta:hover {
+  border-color: var(--ln-accent);
+}
+
+/* ---------- Layout ---------- */
+
+.landing-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.landing-prompt {
+  color: var(--ln-accent);
+  font-family: var(--ln-font-mono);
+  margin-right: 6px;
+}
+
+/* ---------- Hero ---------- */
+
+.landing-hero {
+  padding: 96px 0 80px;
+  border-bottom: 1px solid var(--ln-border);
+}
+
+.landing-eyebrow {
+  font-family: var(--ln-font-mono);
+  font-size: 13px;
+  color: var(--ln-text-muted);
+  margin-bottom: 28px;
+}
+
+.landing-title {
+  font-family: var(--ln-font-mono);
+  font-size: clamp(40px, 7vw, 76px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+  margin: 0 0 28px;
+  color: var(--ln-text);
+}
+.landing-title-accent {
+  color: var(--ln-accent);
+}
+
+.landing-tagline {
+  max-width: 620px;
+  font-size: 17px;
+  color: var(--ln-text-muted);
+  margin: 0 0 40px;
+}
+
+/* Terminal card */
+.landing-terminal {
+  background: var(--ln-bg-elev);
+  border: 1px solid var(--ln-border);
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 720px;
+  margin-bottom: 36px;
+}
+.landing-terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--ln-bg-elev-2);
+  border-bottom: 1px solid var(--ln-border);
+}
+.landing-terminal-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--ln-border-strong);
+}
+.landing-terminal-title {
+  margin-left: 8px;
+  font-family: var(--ln-font-mono);
+  font-size: 12px;
+  color: var(--ln-text-dim);
+}
+.landing-terminal-body {
+  margin: 0;
+  padding: 20px;
+  overflow-x: auto;
+}
+.landing-terminal-body code {
+  font-family: var(--ln-font-mono);
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ln-text);
+  white-space: pre;
+}
+
+/* CTA row */
+.landing-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.landing-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-family: var(--ln-font-mono);
+  font-size: 14px;
+  border: 1px solid var(--ln-border-strong);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.landing-cta-primary {
+  background: var(--ln-accent);
+  color: #06120a;
+  border-color: var(--ln-accent);
+  font-weight: 600;
+}
+.landing-cta-primary:hover {
+  background: #6ee7a0;
+  color: #06120a;
+  border-color: #6ee7a0;
+}
+.landing-cta-secondary {
+  background: transparent;
+  color: var(--ln-text);
+}
+.landing-cta-secondary:hover {
+  border-color: var(--ln-accent);
+  color: var(--ln-accent);
+}
+
+/* ---------- Sections ---------- */
+
+.landing-section {
+  padding: 72px 0;
+  border-bottom: 1px solid var(--ln-border);
+}
+.landing-section-title {
+  font-family: var(--ln-font-mono);
+  font-size: clamp(24px, 4vw, 32px);
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: var(--ln-text);
+}
+.landing-section-sub {
+  color: var(--ln-text-muted);
+  max-width: 620px;
+  margin: 0 0 36px;
+}
+
+/* Bento grid */
+.landing-bento {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+.landing-card {
+  background: var(--ln-bg-elev);
+  border: 1px solid var(--ln-border);
+  border-radius: 8px;
+  padding: 22px;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.landing-card:hover {
+  border-color: var(--ln-border-strong);
+  transform: translateY(-2px);
+}
+.landing-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.landing-card-index {
+  font-family: var(--ln-font-mono);
+  font-size: 12px;
+  color: var(--ln-text-dim);
+}
+.landing-card-weight {
+  font-family: var(--ln-font-mono);
+  font-size: 11px;
+  color: var(--ln-accent);
+  background: var(--ln-accent-dim);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.landing-card-name {
+  font-family: var(--ln-font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--ln-text);
+}
+.landing-card-checks {
+  font-size: 14px;
+  color: var(--ln-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* How it works */
+.landing-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+.landing-step {
+  border-left: 1px solid var(--ln-border-strong);
+  padding: 4px 0 4px 20px;
+}
+.landing-step-n {
+  display: block;
+  font-family: var(--ln-font-mono);
+  font-size: 12px;
+  color: var(--ln-accent);
+  margin-bottom: 8px;
+}
+.landing-step-title {
+  font-family: var(--ln-font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: var(--ln-text);
+}
+.landing-step-body {
+  font-size: 14px;
+  color: var(--ln-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ---------- Footer ---------- */
+
+.landing-footer {
+  border-top: 1px solid var(--ln-border);
+  background: var(--ln-bg);
+}
+.landing-footer-inner {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.landing-footer-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  font-family: var(--ln-font-mono);
+  font-size: 14px;
+}
+.landing-footer-license {
+  font-size: 12px;
+  color: var(--ln-text-dim);
+}
+.landing-footer-nav {
+  display: flex;
+  gap: 20px;
+  font-family: var(--ln-font-mono);
+  font-size: 13px;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 640px) {
+  .landing-header {
+    padding: 16px 20px;
+  }
+  .landing-main {
+    padding: 0 20px;
+  }
+  .landing-hero {
+    padding: 56px 0 48px;
+  }
+  .landing-nav {
+    gap: 14px;
+  }
+  .landing-nav a:not(.landing-nav-cta) {
+    /* keep CTA visible; collapse trailing nav items on very narrow screens */
+    display: none;
+  }
+  .landing-footer-inner {
+    padding: 24px 20px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .landing-terminal-body {
+    padding: 16px;
+  }
+  .landing-terminal-body code {
+    font-size: 12px;
+  }
+}

@@ -67,9 +67,9 @@ test('reconnects to session stream after early close', async ({ page }) => {
     };
   });
 
-  await page.goto('/audit');
+  await page.goto('/app/audit');
   await page.fill('input[type=url]', 'https://example.com');
   await page.click('button[type=submit]');
 
-  await expect(page).toHaveURL(/\/reports\/rpt-mock-1$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/app\/reports\/rpt-mock-1$/, { timeout: 15_000 });
 });

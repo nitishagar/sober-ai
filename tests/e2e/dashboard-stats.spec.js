@@ -8,7 +8,7 @@ test('dashboard shows totals, grade distribution, and recent reports', async ({ 
   await seedReport({ url: 'https://two.example.com', overallScore: 82, grade: 'B' });
   await seedReport({ url: 'https://three.example.com', overallScore: 55, grade: 'D' });
 
-  await page.goto('/');
+  await page.goto('/app');
   await expect(page.locator('.stat-value').first()).toHaveText('3');
 
   await expect(page.locator('.grade-bar-row', { hasText: 'A' })).toBeVisible();

@@ -13,7 +13,7 @@ test('BYO mode toggle stores the key in sessionStorage, not on the server', asyn
     }
   });
 
-  await page.goto('/settings');
+  await page.goto('/app/settings');
 
   // Enable BYO mode via the toggle checkbox.
   const byoToggle = page.locator('input[type="checkbox"][aria-label="Toggle bring-your-own-key mode"]');
@@ -50,7 +50,7 @@ test('BYO mode toggle stores the key in sessionStorage, not on the server', asyn
 });
 
 test('BYO mode off (default) does not set the sober_byo_enabled flag', async ({ page }) => {
-  await page.goto('/settings');
+  await page.goto('/app/settings');
   // Default: BYO mode off → flag absent.
   const flag = await page.evaluate(() => window.sessionStorage.getItem('sober_byo_enabled'));
   expect(flag).toBeNull();

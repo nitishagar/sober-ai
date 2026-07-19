@@ -7,7 +7,7 @@ test.describe('LLM health banner', () => {
       contentType: 'application/json',
       body: JSON.stringify({ status: 'ok', services: { ollama: 'connected' } }),
     }));
-    await page.goto('/audit');
+    await page.goto('/app/audit');
     await expect(page.locator('.llm-warning')).toHaveCount(0);
   });
 
@@ -17,7 +17,7 @@ test.describe('LLM health banner', () => {
       contentType: 'application/json',
       body: JSON.stringify({ status: 'ok', services: { ollama: 'disconnected' } }),
     }));
-    await page.goto('/audit');
+    await page.goto('/app/audit');
     const banner = page.locator('.llm-warning');
     await expect(banner).toBeVisible();
     await banner.locator('button[aria-label="Dismiss"]').click();

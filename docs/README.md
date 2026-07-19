@@ -1,26 +1,35 @@
-# SoberAI Optimizer
+# SoberAI
 
-**Lighthouse for the AI Age** - A free, open-source desktop application that audits websites for AI agent optimization.
+> `# Lighthouse for the AI age` — score how readable your site is to machines.
 
-## Why SoberAI?
+SoberAI audits a website for AI-agent readability: can crawlers, agents, and
+models actually read your content? It computes a weighted 0–100 score across
+five categories and surfaces prioritized, AI-generated fixes. Open source,
+local-first, no telemetry, no account.
 
-With over **1 billion monthly AI crawler requests** from GPTBot, ClaudeBot, and PerplexityBot, optimizing your website for AI visibility is essential. SoberAI is the first specialized tool for ensuring your website works perfectly with AI agents, LLMs, and autonomous browsing systems.
+[**Open the app →**](http://localhost:3000/app) ·
+[GitHub](https://github.com/nitishagar/sober-ai) ·
+[Releases](https://github.com/nitishagar/sober-ai/releases)
 
-## Key Features
+---
 
-| Category | Weight | What It Checks |
+## What we score
+
+Five categories, weighted into a single 0–100 overall score:
+
+| Category | Weight | What it checks |
 |----------|--------|----------------|
-| SSR Readiness | 25% | Server-side rendering, JavaScript dependency |
+| SSR Readiness | 25% | Server-side rendering, JS dependency, crawlable HTML |
 | Schema Coverage | 20% | Structured data, Schema.org implementation |
 | Semantic Structure | 20% | HTML5 semantic elements, heading hierarchy |
-| Content Extractability | 20% | Text readability, content accessibility for LLMs |
+| Content Extractability | 20% | Text readability, main-content isolation for LLMs |
+| Machine Readability | 20% | `robots.txt`, sitemap, crawl signals for AI user-agents |
 
-- **AI-Powered Recommendations** via configurable LLM providers (Ollama or OpenAI)
-- **Real-time progress** with SSE streaming during audits
-- **Desktop application** powered by Electron - runs anywhere
-- **No account required** - completely free, no sign-up
+> Scores are normalized so the five categories always sum to 100.
 
-## Quick Start
+---
+
+## Quick start
 
 ```bash
 # Clone and install
@@ -28,36 +37,54 @@ git clone https://github.com/nitishagar/sober-ai.git
 cd sober-ai
 npm install
 
-# Install frontend dependencies and build
+# Build the frontend, then start the API
 cd frontend && npm install && npm run build && cd ..
-
-# Start the server
 node src/api/server.js
 
-# Open http://localhost:3000
+# Open http://localhost:3000/app
 ```
 
-Or download the desktop app from the [Releases page](https://github.com/nitishagar/sober-ai/releases).
+Or launch the desktop app:
 
-## Technology Stack
+```bash
+npm run electron:dev
+```
+
+Prefer a binary? Download from the
+[Releases page](https://github.com/nitishagar/sober-ai/releases).
+
+---
+
+## Highlights
+
+- **AI-powered recommendations** via configurable LLM providers (Ollama local, or
+  BYO-key cloud: OpenAI / Anthropic / NVIDIA NIM)
+- **Real-time progress** with SSE streaming during audits
+- **Desktop application** powered by Electron — runs anywhere
+- **No account, no telemetry** — completely free, no sign-up
+
+---
+
+## Technology stack
 
 - **Runtime**: Node.js 22+
 - **Desktop**: Electron
 - **Framework**: Express.js
 - **Browser Automation**: Playwright
-- **LLM**: Ollama (local/cloud) or OpenAI
+- **LLM**: Ollama (local/cloud) or BYO-key cloud providers
 - **Frontend**: React + Vite
 - **Database**: SQLite via Prisma
 
-## Documentation
+---
 
-- [Installation Guide](getting-started/installation.md)
+## Next steps
+
+- [Installation](getting-started/installation.md)
 - [Quick Start](getting-started/quick-start.md)
 - [Running Audits](guide/running-audits.md)
 - [LLM Configuration](guide/llm-configuration.md)
 - [API Reference](API.md)
-- [Architecture](ARCHITECTURE.md)
 
 ## License
 
-MIT License - see [LICENSE](https://github.com/nitishagar/sober-ai/blob/main/LICENSE) for details.
+MIT License — see [LICENSE](https://github.com/nitishagar/sober-ai/blob/main/LICENSE).

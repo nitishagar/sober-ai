@@ -43,7 +43,7 @@ export default function ReportDetail() {
   };
 
   const handleReaudit = () => {
-    navigate('/audit', { state: { prefillUrl: report.url } });
+    navigate('/app/audit', { state: { prefillUrl: report.url } });
   };
 
   const handleDownloadJson = () => {
@@ -69,7 +69,7 @@ export default function ReportDetail() {
     return (
       <div className="report-loading">
         <p>{error || 'Report not found'}</p>
-        <Link to="/reports" className="back-link">← Back to Reports</Link>
+        <Link to="/app/reports" className="back-link">← Back to Reports</Link>
       </div>
     );
   }
@@ -87,7 +87,7 @@ export default function ReportDetail() {
       {/* Header with URL and overall gauge */}
       <div className="report-header">
         <div className="report-header-info">
-          <Link to="/reports" className="back-link">← Back to Reports</Link>
+          <Link to="/app/reports" className="back-link">← Back to Reports</Link>
           <h1 className="report-url-title">{report.url}</h1>
           <p className="text-secondary">
             {new Date(report.createdAt).toLocaleString()} • {formatDuration(report.duration)}
@@ -110,7 +110,7 @@ export default function ReportDetail() {
                 <ul className="compare-picker-list">
                   {otherReports.map(r => (
                     <li key={r.id}>
-                      <Link to={`/compare/${id}/${r.id}`}>
+                      <Link to={`/app/compare/${id}/${r.id}`}>
                         <span className="text-mono">{r.url}</span>
                         <span className="text-secondary"> — {r.overallScore} ({r.grade})</span>
                       </Link>

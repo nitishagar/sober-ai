@@ -9,10 +9,10 @@ export default function Layout() {
         <div className="header-content">
           <div className="logo">SoberAI</div>
           <nav className="nav">
-            <Link to="/">Dashboard</Link>
-            <Link to="/audit">Audit</Link>
-            <Link to="/reports">Reports</Link>
-            <Link to="/settings">Settings</Link>
+            <Link to="/app">Dashboard</Link>
+            <Link to="/app/audit">Audit</Link>
+            <Link to="/app/reports">Reports</Link>
+            <Link to="/app/settings">Settings</Link>
           </nav>
         </div>
       </header>

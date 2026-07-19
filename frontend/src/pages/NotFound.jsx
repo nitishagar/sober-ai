@@ -11,7 +11,7 @@ export default function NotFound() {
         <p className="text-secondary">
           The page you're looking for doesn't exist or has been moved.
         </p>
-        <Link to="/" className="notfound-home-link">← Back to Dashboard</Link>
+        <Link to="/" className="notfound-home-link">← Back to home</Link>
       </div>
     </div>
   );

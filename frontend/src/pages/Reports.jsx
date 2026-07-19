@@ -84,7 +84,7 @@ export default function Reports() {
 
   const handleCompare = () => {
     const [a, b] = [...selected];
-    navigate(`/compare/${a}/${b}`);
+    navigate(`/app/compare/${a}/${b}`);
   };
 
   const handleExportCsv = async () => {
@@ -128,7 +128,7 @@ export default function Reports() {
     <div className="reports-page">
       <div className="reports-header">
         <h1>Reports</h1>
-        <Link to="/audit">
+        <Link to="/app/audit">
           <button className="primary">New Audit</button>
         </Link>
       </div>
@@ -220,7 +220,7 @@ export default function Reports() {
                   {new Date(report.createdAt).toLocaleDateString()}
                 </div>
                 <div className="actions">
-                  <Link to={`/reports/${report.id}`}>
+                  <Link to={`/app/reports/${report.id}`}>
                     <button>View</button>
                   </Link>
                   <button onClick={() => handleDelete(report.id)}>Delete</button>
