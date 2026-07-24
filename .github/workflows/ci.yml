@@ -28,3 +28,27 @@ jobs:
         run: npm run lint
       - name: Build frontend
         run: cd frontend && npm ci && npm run build
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    env:
+      # Self-contained: test-server.js uses an isolated sqlite DB and stubs Ollama.
+      DATABASE_URL: file:/tmp/soberai-e2e.db
+      OLLAMA_ENDPOINT: http://localhost:11435
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate --schema=src/db/schema.prisma
+      # test-server.js serves the built React SPA from frontend/dist.
+      - name: Build frontend
+        run: cd frontend && npm ci && npm run build
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run E2E tests
+        run: npm run test:e2e

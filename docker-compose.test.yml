@@ -1,35 +1,12 @@
 version: '3.8'
 
+# docker-compose.test.yml
+# Local integration-test orchestration. The app uses a SQLite database
+# (src/db/schema.prisma provider="sqlite"), so there is no DB infrastructure to
+# stand up — the backend mounts a file: DATABASE_URL and runs prisma migrate
+# deploy itself, mirroring docker-compose.local.yml's working shape.
+
 services:
-  # PostgreSQL database
-  postgres:
-    image: postgres:15-alpine
-    container_name: sober-postgres-test
-    environment:
-      POSTGRES_DB: soberai_test
-      POSTGRES_USER: soberai
-      POSTGRES_PASSWORD: test_password
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U soberai"]
-      interval: 5s
-      timeout: 3s
-      retries: 3
-
-  # Redis for future queue system
-  redis:
-    image: redis:7-alpine
-    container_name: sober-redis-test
-    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 3
-
   # Ollama LLM service
   ollama:
     image: ollama/ollama:latest
@@ -54,16 +31,15 @@ services:
     container_name: sober-backend-test
     ports:
       - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - sqlite-test-data:/app/data
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - DATABASE_URL=postgresql://soberai:test_password@postgres:5432/soberai_test
+      - DATABASE_URL=file:/app/data/soberai.db
       - OLLAMA_ENDPOINT=http://ollama:11434
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       ollama:
         condition: service_started
     command: >
@@ -81,6 +57,9 @@ services:
     container_name: sober-frontend-test
     ports:
       - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
     environment:
       - VITE_API_URL=http://backend:3000
     depends_on:
@@ -88,3 +67,4 @@ services:
 
 volumes:
   ollama-test-data:
+  sqlite-test-data:

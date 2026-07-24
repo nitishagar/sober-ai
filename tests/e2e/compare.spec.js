@@ -41,3 +41,24 @@ test('compare with unknown ids renders not-found branch', async ({ page }) => {
   await page.goto('/app/compare/bad1/bad2');
   await expect(page.locator('text=/not found/i').first()).toBeVisible();
 });
+
+test('compare surfaces the machineReadabilityDelta — all 5 categories (invariant I-1)', async ({ page }) => {
+  // Seed distinct machineReadabilityScore so the 5th delta is non-zero and a
+  // missing field would not be masked by a zero default.
+  const a = await seedReport({
+    url: 'https://mra.example.com', overallScore: 50, grade: 'C',
+    machineReadabilityScore: 40
+  });
+  const b = await seedReport({
+    url: 'https://mrb.example.com', overallScore: 60, grade: 'C',
+    machineReadabilityScore: 75
+  });
+
+  await page.goto(`/app/compare/${a.id}/${b.id}`);
+  await expect(page.locator('text=Deltas').first()).toBeVisible();
+
+  // The "Machine Readability" row must render (6th DELTAS entry — I-1).
+  await expect(page.locator('.compare-deltas')).toContainText('Machine Readability');
+  // machineReadabilityDelta = 75 - 40 = +35.
+  await expect(page.locator('.compare-deltas')).toContainText('+35');
+});

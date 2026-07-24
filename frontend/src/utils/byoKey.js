@@ -31,8 +31,9 @@ export function isByoMode() {
 }
 
 /**
- * Enable or disable BYO mode. Disabling does NOT clear a stored key — call
- * clearByoSettings() for that — it only switches the mode toggle.
+ * Enable or disable BYO mode. Disabling clears any stored BYO key material
+ * (credential hygiene — invariant H) in addition to switching the mode toggle,
+ * so the user's API key does not persist after they explicitly turn BYO off.
  * @param {boolean} enabled
  */
 export function setByoMode(enabled) {
@@ -42,6 +43,7 @@ export function setByoMode(enabled) {
     storage.setItem(ENABLED_KEY, '1');
   } else {
     storage.removeItem(ENABLED_KEY);
+    clearByoSettings();
   }
 }
 

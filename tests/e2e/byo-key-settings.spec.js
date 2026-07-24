@@ -55,3 +55,30 @@ test('BYO mode off (default) does not set the sober_byo_enabled flag', async ({ 
   const flag = await page.evaluate(() => window.sessionStorage.getItem('sober_byo_enabled'));
   expect(flag).toBeNull();
 });
+
+test('toggling BYO mode OFF clears the stored key from sessionStorage (invariant I-4)', async ({ page }) => {
+  // Set up the precondition: BYO on + a key saved, exactly as the first test does.
+  await page.goto('/app/settings');
+  const byoToggle = page.locator('input[type="checkbox"][aria-label="Toggle bring-your-own-key mode"]');
+  await byoToggle.check();
+
+  const keyInput = page.locator('input[placeholder*="kept in this browser only"]');
+  await keyInput.fill('my-nvidia-key-do-not-leak');
+  const endpointInput = page.locator('input[placeholder="https://integrate.api.nvidia.com/v1"]');
+  await endpointInput.fill('https://integrate.api.nvidia.com/v1');
+  const modelInput = page.locator('input[placeholder*="llama-3.1-8b-instruct"]');
+  await modelInput.fill('meta/llama-3.1-8b-instruct');
+  await page.getByRole('button', { name: 'Save Settings' }).click();
+  await expect(page.locator('.settings-message--success')).toContainText(/BYO settings saved/);
+
+  // Precondition: key is present.
+  const before = await page.evaluate(() => window.sessionStorage.getItem('sober_byo'));
+  expect(before).toContain('my-nvidia-key-do-not-leak');
+
+  // Toggle BYO OFF — this must clear the key (invariant I-4), not just the flag.
+  await byoToggle.uncheck();
+
+  const after = await page.evaluate(() => window.sessionStorage.getItem('sober_byo'));
+  // The credential must no longer persist after the user explicitly turned BYO off.
+  expect(after).toBeNull();
+});

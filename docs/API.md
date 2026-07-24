@@ -119,8 +119,11 @@ Returns all settings with API keys masked.
   "ollama_endpoint": "http://localhost:11434",
   "ollama_model": "qwen3:4b",
   "ollama_api_key": "",
+  "openai_endpoint": "",
   "openai_api_key": "",
-  "openai_model": "gpt-4o-mini"
+  "openai_model": "gpt-4o-mini",
+  "anthropic_api_key": "",
+  "anthropic_model": "claude-haiku-4-5-20251001"
 }
 ```
 
@@ -157,7 +160,8 @@ Tests the currently configured LLM provider.
 [
   { "id": "ollama_local", "name": "Ollama (Local)", "requiresApiKey": false },
   { "id": "ollama_cloud", "name": "Ollama (Cloud)", "requiresApiKey": true },
-  { "id": "openai", "name": "OpenAI", "requiresApiKey": true }
+  { "id": "openai", "name": "OpenAI", "requiresApiKey": true },
+  { "id": "anthropic", "name": "Anthropic (Claude)", "requiresApiKey": true }
 ]
 ```
 

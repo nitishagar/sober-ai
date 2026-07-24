@@ -156,7 +156,7 @@ router.post('/', auditLimiter, async (req, res) => {
 
   // Validate the request body (invariant I): reject missing/malformed/non-http(s) URLs
   // before doing any work. validateAuditRequest is the existing pattern used by the
-  // sibling audit routes (audit.js:16, audit-mvp.js:15).
+  // sibling audit route (audit.js:16).
   const validation = validateAuditRequest(req.body);
   if (!validation.valid) {
     return res.status(400).json({ error: validation.errors.join('; ') });

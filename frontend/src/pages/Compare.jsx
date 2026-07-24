@@ -7,7 +7,8 @@ const DELTAS = [
   { key: 'ssrDelta', label: 'SSR Readiness' },
   { key: 'schemaDelta', label: 'Schema Coverage' },
   { key: 'semanticDelta', label: 'Semantic Structure' },
-  { key: 'contentDelta', label: 'Content Extractability' }
+  { key: 'contentDelta', label: 'Content Extractability' },
+  { key: 'machineReadabilityDelta', label: 'Machine Readability' }
 ];
 
 function DeltaRow({ label, value }) {

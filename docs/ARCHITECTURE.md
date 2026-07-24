@@ -105,11 +105,11 @@ Weighted scoring with configurable weights (default):
 
 | Category | Weight |
 |----------|--------|
-| SSR Readiness | 25% |
+| SSR Readiness | 20% |
 | Schema Coverage | 20% |
 | Semantic Structure | 20% |
 | Content Extractability | 20% |
-| Reserved | 15% |
+| Machine Readability | 20% |
 
 Grades: A (90+), B (80-89), C (70-79), D (60-69), F (<60)
 

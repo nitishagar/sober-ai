@@ -17,7 +17,7 @@ node src/api/server.js
 3. Click **Run Audit**
 4. Watch real-time progress as SoberAI:
    - Gathers website data via Playwright
-   - Runs 4 audit categories
+   - Runs 5 audit categories
    - Calculates weighted scores
    - Generates AI recommendations
 
@@ -26,7 +26,7 @@ node src/api/server.js
 The report shows:
 
 - **Overall Score** (0-100) with letter grade (A-F)
-- **Category Scores** for SSR, Schema, Semantic, and Content
+- **Category Scores** for SSR, Schema, Semantic, Content, and Machine Readability
 - **AI Recommendations** with priority, impact, and effort ratings
 - **Code Examples** showing exactly what to change
 

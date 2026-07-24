@@ -19,13 +19,13 @@ With 1 billion+ monthly AI crawler requests (GPTBot, ClaudeBot, PerplexityBot), 
 
 | Category | Weight | Description |
 |----------|--------|-------------|
-| SSR Readiness | 25% | Server-side rendering for AI agents that don't execute JavaScript |
+| SSR Readiness | 20% | Server-side rendering for AI agents that don't execute JavaScript |
 | Schema Coverage | 20% | Structured data (Schema.org) for AI understanding |
 | Semantic Structure | 20% | HTML5 semantic elements and heading hierarchy |
 | Content Extractability | 20% | Text readability and accessibility for LLMs |
 | Machine Readability | 20% | AI crawler access (robots.txt, llms.txt, sitemap, OpenGraph) |
 
-AI-powered recommendations are generated using your choice of LLM provider (Ollama or OpenAI).
+AI-powered recommendations are generated using your choice of LLM provider (Ollama, OpenAI, or Anthropic; NVIDIA NIM also works via the OpenAI-compatible bring-your-own-key endpoint).
 
 ## Quick Start
 
@@ -67,7 +67,7 @@ For AI-powered recommendations, install [Ollama](https://ollama.com) and pull a 
 ollama pull qwen3:4b
 ```
 
-Or configure OpenAI in Settings with your API key.
+Or configure OpenAI or Anthropic in Settings with your API key.
 
 ## Usage
 
@@ -86,7 +86,7 @@ Electron Shell
 ├── Express.js Backend (in-process)
 ├── SQLite Database (Prisma ORM)
 ├── Playwright (browser automation)
-└── LLM Provider (Ollama local/cloud or OpenAI)
+└── LLM Provider (Ollama local/cloud, OpenAI, or Anthropic)
 ```
 
 ### Key Technologies
@@ -96,12 +96,12 @@ Electron Shell
 - **Frontend**: React + Vite
 - **Database**: SQLite via Prisma
 - **Browser**: Playwright
-- **LLM**: Ollama (local/cloud) or OpenAI
+- **LLM**: Ollama (local/cloud), OpenAI, or Anthropic
 
 ## Testing
 
 ```bash
-npm test              # Run all tests (235 tests, 23 suites)
+npm test              # Run all tests (Jest unit + integration suites)
 npm run test:unit     # Unit tests only
 npm run test:integration  # Integration tests only
 npm run test:ci       # CI mode (all tests, force exit)

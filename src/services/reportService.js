@@ -53,7 +53,8 @@ class ReportService {
           grade: true,
           detectedIndustry: true,
           duration: true,
-          createdAt: true
+          createdAt: true,
+          machineReadabilityScore: true
         }
       }),
       prisma.report.count({ where })
@@ -158,7 +159,8 @@ class ReportService {
         ssrDelta: report2.ssrScore - report1.ssrScore,
         schemaDelta: report2.schemaScore - report1.schemaScore,
         semanticDelta: report2.semanticScore - report1.semanticScore,
-        contentDelta: report2.contentScore - report1.contentScore
+        contentDelta: report2.contentScore - report1.contentScore,
+        machineReadabilityDelta: report2.machineReadabilityScore - report1.machineReadabilityScore
       }
     };
   }

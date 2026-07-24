@@ -7,7 +7,6 @@ const fs = require('fs');
 
 // Import routes
 const auditProgressRouter = require('./routes/audit-progress');
-const mvpAuditRouter = require('./routes/audit-mvp');
 const reportsRouter = require('./routes/reports');
 const settingsRouter = require('./routes/settings');
 
@@ -68,14 +67,13 @@ app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve React build output (production/Electron) or legacy UI
+// Serve React build output (production/Electron). The legacy static UI has been
+// removed; when frontend/dist is absent, non-API routes are answered with a
+// deliberate message by the SPA fallback below (no 500).
 const frontendDistPath = path.join(__dirname, '../../frontend/dist');
-const legacyUIPath = path.join(__dirname, '../ui/public');
 
 if (fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
-} else if (fs.existsSync(legacyUIPath)) {
-  app.use(express.static(legacyUIPath));
 }
 
 // Make config available to routes
@@ -112,7 +110,6 @@ app.get('/api/health', async (req, res) => {
 
 // API routes
 app.use('/api/audit-progress', auditProgressRouter);
-app.use('/api/mvp/audit', mvpAuditRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/settings', settingsRouter);
 
@@ -122,17 +119,20 @@ app.use('/api/report', reportRouter);
 app.use('/api/batch', batchRouter);
 app.use('/api/status', statusRouter);
 
-// Serve index.html for the root and any non-API routes (SPA fallback)
+// Serve index.html for the root and any non-API routes (SPA fallback).
 app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api/')) {
-    // Try React build first, then legacy UI
-    const indexPath = fs.existsSync(path.join(frontendDistPath, 'index.html'))
-      ? path.join(frontendDistPath, 'index.html')
-      : path.join(legacyUIPath, 'index.html');
-    res.sendFile(indexPath);
-  } else {
-    res.status(404).json({ error: 'API endpoint not found' });
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
   }
+  const indexPath = path.join(frontendDistPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+  // frontend/dist absent (e.g. source checkout without a build): return a deliberate,
+  // informative response instead of sendFile on a non-existent path (which throws a 500).
+  return res.status(404).send(
+    'Frontend build not found — run `cd frontend && npm run build`'
+  );
 });
 
 // Error handling middleware (must be last)

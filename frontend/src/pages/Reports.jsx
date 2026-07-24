@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getScoreColorHex, getScoreClass } from '../utils/scoreUtils';
 import './Reports.css';
@@ -15,6 +15,7 @@ export default function Reports() {
   const [reports, setReports] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -23,7 +24,20 @@ export default function Reports() {
   const [selected, setSelected] = useState(new Set());
   const navigate = useNavigate();
 
+  // AbortController-per-fetch: cancels any in-flight list fetch when a newer one
+  // starts, closing both the pre-existing search/sort last-resolve-wins race and the
+  // delete-vs-fetch resurrection window (invariant I-3). Holds the latest controller.
+  const fetchAbortRef = useRef(null);
+
   const fetchReports = (targetPage = page) => {
+    // Cancel any prior in-flight fetch so a slow, stale .then can never overwrite a
+    // fresh result (and is aborted before re-adding a just-deleted row).
+    if (fetchAbortRef.current) {
+      fetchAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    fetchAbortRef.current = controller;
+
     const params = new URLSearchParams({
       page: targetPage,
       limit: pageSize,
@@ -32,30 +46,59 @@ export default function Reports() {
     });
     if (search) params.append('search', search);
 
-    fetch(`/api/reports?${params}`)
-      .then(res => res.json())
+    fetch(`/api/reports?${params}`, { signal: controller.signal })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load reports');
+        return res.json();
+      })
       .then(data => {
         setReports(data.reports || []);
         setPagination(data.pagination);
+        setError(null);
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(err => {
+        // An aborted fetch is the expected cancellation path — ignore it. Surface
+        // all other failures rather than silently console.error-ing them.
+        if (err.name === 'AbortError') return;
+        setError(err.message || 'Failed to load reports');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
   };
 
   useEffect(() => {
+    setLoading(true);
     fetchReports(page);
+    // Abort the in-flight fetch on unmount / deps change so a late-arriving
+    // response cannot setState after unmount (no setState-after-unmount).
+    return () => {
+      if (fetchAbortRef.current) fetchAbortRef.current.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, sortBy, sortOrder, pageSize, page]);
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this report?')) return;
-    const res = await fetch(`/api/reports/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      setReports(reports.filter(r => r.id !== id));
+    try {
+      const res = await fetch(`/api/reports/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        // No state mutation on failure: a failed delete must not silently remove
+        // the row. Surface the error to the user instead.
+        setError('Failed to delete report');
+        return;
+      }
+      setError(null);
       setSelected(prev => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
+      // Refetch (AbortController-guarded) rather than hand-filtering state, so a
+      // concurrent in-flight list fetch cannot resurrect the deleted row.
+      fetchReports(page);
+    } catch (err) {
+      setError(err.message || 'Failed to delete report');
     }
   };
 
@@ -132,6 +175,8 @@ export default function Reports() {
           <button className="primary">New Audit</button>
         </Link>
       </div>
+
+      {error && <div className="error-message">{error}</div>}
 
       <div className="card reports-container">
         <div className="reports-toolbar">
