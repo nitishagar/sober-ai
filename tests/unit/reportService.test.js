@@ -3,12 +3,14 @@
 const mockFindFirst = jest.fn();
 const mockFindMany = jest.fn();
 const mockCount = jest.fn();
+const mockDeleteMany = jest.fn();
 jest.mock('@prisma/client', () => ({
   PrismaClient: jest.fn().mockImplementation(() => ({
     report: {
       findFirst: mockFindFirst,
       findMany: mockFindMany,
-      count: mockCount
+      count: mockCount,
+      deleteMany: mockDeleteMany
     }
   }))
 }));
@@ -110,11 +112,11 @@ describe('reportService.getReports — invariant I-2 (list payload completeness)
     jest.clearAllMocks();
   });
 
-  it('selects machineReadabilityScore so the list payload carries all 5 category scores', async () => {
-    // The explicit .select must include machineReadabilityScore. Assert the field
+  it('selects all 5 category scores so the list payload carries each one', async () => {
+    // The explicit .select must include every category score. Assert each field
     // is present in the select AND flows through to the returned report rows.
     mockFindMany.mockResolvedValue([
-      makeReport({ id: 'r1', machineReadabilityScore: 77 })
+      makeReport({ id: 'r1', ssrScore: 71, schemaScore: 72, semanticScore: 73, contentScore: 74, machineReadabilityScore: 75 })
     ]);
     mockCount.mockResolvedValue(1);
 
@@ -122,8 +124,83 @@ describe('reportService.getReports — invariant I-2 (list payload completeness)
 
     expect(mockFindMany).toHaveBeenCalledTimes(1);
     const selectArg = mockFindMany.mock.calls[0][0].select;
+    expect(selectArg).toHaveProperty('ssrScore', true);
+    expect(selectArg).toHaveProperty('schemaScore', true);
+    expect(selectArg).toHaveProperty('semanticScore', true);
+    expect(selectArg).toHaveProperty('contentScore', true);
     expect(selectArg).toHaveProperty('machineReadabilityScore', true);
 
-    expect(result.reports[0]).toHaveProperty('machineReadabilityScore', 77);
+    expect(result.reports[0]).toMatchObject({
+      ssrScore: 71, schemaScore: 72, semanticScore: 73, contentScore: 74, machineReadabilityScore: 75
+    });
+  });
+});
+
+describe('reportService.getReports — sort allowlist with fallback-to-defaults', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+  });
+
+  it.each([';DROP', 'createdAt;--', 'overallscore', 'foo', ''])(
+    'hostile/unknown sortBy %p falls back to createdAt/desc without throwing', async (sortBy) => {
+      const result = await reportService.getReports({ sortBy, sortOrder: 'desc' });
+
+      expect(mockFindMany).toHaveBeenCalledTimes(1);
+      expect(mockFindMany.mock.calls[0][0].orderBy).toEqual({ createdAt: 'desc' });
+      expect(result.reports).toEqual([]);
+    }
+  );
+
+  it.each(['ASCENDING', 'DROP', 'desc;--', '', null, undefined])(
+    'hostile/unknown sortOrder %p falls back to desc without throwing', async (sortOrder) => {
+      await reportService.getReports({ sortBy: 'createdAt', sortOrder });
+
+      expect(mockFindMany).toHaveBeenCalledTimes(1);
+      expect(mockFindMany.mock.calls[0][0].orderBy).toEqual({ createdAt: 'desc' });
+    }
+  );
+
+  it('honors allowlisted sortBy values and case-insensitive sortOrder', async () => {
+    await reportService.getReports({ sortBy: 'overallScore', sortOrder: 'ASC' });
+    expect(mockFindMany.mock.calls[0][0].orderBy).toEqual({ overallScore: 'asc' });
+
+    await reportService.getReports({ sortBy: 'url', sortOrder: 'Desc' });
+    expect(mockFindMany.mock.calls[1][0].orderBy).toEqual({ url: 'desc' });
+
+    await reportService.getReports({ sortBy: 'grade', sortOrder: 'asc' });
+    expect(mockFindMany.mock.calls[2][0].orderBy).toEqual({ grade: 'asc' });
+  });
+});
+
+describe('reportService.deleteReport — atomic owner-scoped delete', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('issues a single owner-scoped deleteMany (no read-then-delete)', async () => {
+    mockDeleteMany.mockResolvedValue({ count: 1 });
+
+    await reportService.deleteReport('r1', 'token-a');
+
+    expect(mockFindFirst).not.toHaveBeenCalled();
+    expect(mockDeleteMany).toHaveBeenCalledTimes(1);
+    expect(mockDeleteMany).toHaveBeenCalledWith({ where: { id: 'r1', ownerToken: 'token-a' } });
+  });
+
+  it('cross-owner delete matches 0 rows → Report not found', async () => {
+    mockDeleteMany.mockResolvedValue({ count: 0 });
+
+    await expect(reportService.deleteReport('r1', 'token-b')).rejects.toThrow('Report not found');
+    expect(mockDeleteMany).toHaveBeenCalledWith({ where: { id: 'r1', ownerToken: 'token-b' } });
+  });
+
+  it('null token keeps the legacy global path (no ownerToken in where)', async () => {
+    mockDeleteMany.mockResolvedValue({ count: 1 });
+
+    await reportService.deleteReport('r1', null);
+
+    expect(mockDeleteMany).toHaveBeenCalledWith({ where: { id: 'r1' } });
   });
 });

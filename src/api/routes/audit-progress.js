@@ -1,5 +1,5 @@
 const express = require('express');
-const rateLimit = require('express-rate-limit');
+const { auditLimiter } = require('../middleware/rate-limit');
 const Auditor = require('../../core/auditor');
 const reportService = require('../../services/reportService');
 const { loadProviderSettings } = require('./settings');
@@ -10,17 +10,9 @@ const logger = require('../../utils/logger');
 
 const router = express.Router();
 
-// Per-IP rate limit on the audit POST route (invariant I). High enough default
-// (30/min) that the integration suite's sequential audits don't trip; env-tunable.
-const auditLimiter = rateLimit({
-  windowMs: 60_000,
-  max: Number(process.env.AUDIT_RATE_LIMIT) || 30,
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (_req, res) => {
-    res.status(429).json({ error: 'Too many audit requests, please slow down.' });
-  }
-});
+// Shared per-IP rate limiter for the write POST routes (invariant I/S12) —
+// defined in ../middleware/rate-limit so audit-progress, audit, and batch
+// share ONE per-IP budget with an identical 429 shape.
 
 // Store active audit sessions (state + emitter)
 const activeSessions = new Map();

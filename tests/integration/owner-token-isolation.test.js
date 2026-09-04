@@ -28,8 +28,8 @@ describe('Report isolation via ephemeral owner token (invariant G)', () => {
   const originalOwnerFlag = process.env.OWNER_TOKEN_REQUIRED;
   const originalNodeEnv = process.env.NODE_ENV;
 
-  beforeEach(() => {
-    truncateAll();
+  beforeEach(async () => {
+    await truncateAll();
     // Force isolation ON for these tests.
     process.env.OWNER_TOKEN_REQUIRED = '1';
     delete process.env.NODE_ENV;
@@ -101,6 +101,13 @@ describe('Report isolation via ephemeral owner token (invariant G)', () => {
     const prisma = getPrisma();
     const stillThere = await prisma.report.findUnique({ where: { id: report.id } });
     expect(stillThere).not.toBeNull();
+
+    // …and still GET-able by the owner via the API.
+    const own = await request(app)
+      .get(`/api/reports/${report.id}`)
+      .set('Cookie', `${COOKIE_NAME}=${tokenA}`);
+    expect(own.status).toBe(200);
+    expect(own.body.id).toBe(report.id);
   });
 
   it('compare returns 404 when one report belongs to another token', async () => {
@@ -135,8 +142,8 @@ describe('Report isolation — null token mode (local/desktop, legacy)', () => {
   const originalOwnerFlag = process.env.OWNER_TOKEN_REQUIRED;
   const originalNodeEnv = process.env.NODE_ENV;
 
-  beforeEach(() => {
-    truncateAll();
+  beforeEach(async () => {
+    await truncateAll();
     // Isolation OFF: no flag and not production.
     delete process.env.OWNER_TOKEN_REQUIRED;
     delete process.env.NODE_ENV;

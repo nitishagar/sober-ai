@@ -2,6 +2,8 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const Auditor = require('../../core/auditor');
 const { validateAuditRequest } = require('../../utils/validator');
+const { isPrivateTarget } = require('../../utils/ssrf');
+const { auditLimiter } = require('../middleware/rate-limit');
 const logger = require('../../utils/logger');
 
 const router = express.Router();
@@ -10,7 +12,7 @@ const router = express.Router();
 const auditResults = new Map();
 
 // POST /api/audit - Run a single URL audit
-router.post('/', async (req, res, next) => {
+router.post('/', auditLimiter, async (req, res, next) => {
   try {
     // Validate request
     const validation = validateAuditRequest(req.body);
@@ -22,6 +24,15 @@ router.post('/', async (req, res, next) => {
     }
 
     const { url, options = {} } = req.body;
+
+    // SSRF guard: block targets resolving to private/loopback/link-local IPs.
+    // Mirrors audit-progress.js — DNS-resolution failure passes through to the
+    // audit attempt (isPrivateTarget returns blocked:false), never blocks.
+    const ssrf = await isPrivateTarget(url);
+    if (ssrf.blocked) {
+      return res.status(400).json({ error: `Blocked: ${ssrf.reason}` });
+    }
+
     const auditId = uuidv4();
 
     logger.info(`Starting audit ${auditId} for: ${url}`);

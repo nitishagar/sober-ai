@@ -130,4 +130,69 @@ describe('Reports API', () => {
       expect(res.status).toBe(404);
     });
   });
+
+  describe('GET /api/reports list payload + sort hardening (Cycle 2)', () => {
+    async function seedListReport(prisma, overrides) {
+      return prisma.report.create({
+        data: {
+          url: 'https://example.com',
+          overallScore: 70,
+          grade: 'C',
+          ssrScore: 60,
+          schemaScore: 65,
+          semanticScore: 70,
+          contentScore: 75,
+          detectedIndustry: 'general',
+          auditResults: JSON.stringify({}),
+          duration: 4000,
+          ...overrides
+        }
+      });
+    }
+
+    it('list rows carry all 5 category scores', async () => {
+      const prisma = getPrisma();
+      await seedListReport(prisma, {
+        url: 'https://scores.example.com',
+        ssrScore: 71, schemaScore: 72, semanticScore: 73, contentScore: 74,
+        machineReadabilityScore: 75
+      });
+
+      const res = await request(app).get('/api/reports');
+      expect(res.status).toBe(200);
+      expect(res.body.reports).toHaveLength(1);
+      expect(res.body.reports[0]).toMatchObject({
+        ssrScore: 71, schemaScore: 72, semanticScore: 73, contentScore: 74,
+        machineReadabilityScore: 75
+      });
+    });
+
+    it.each([
+      'sortBy=;DROP&sortOrder=ASCENDING',
+      'sortBy=createdAt;--&sortOrder=desc;--',
+      'sortBy=nope&sortOrder=nope'
+    ])('hostile sort query %p falls back to defaults (200, no throw)', async (query) => {
+      const prisma = getPrisma();
+      await seedListReport(prisma, { url: 'https://hostile.example.com' });
+
+      const res = await request(app).get(`/api/reports?${query}`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.reports)).toBe(true);
+      expect(res.body.reports).toHaveLength(1);
+    });
+
+    it('honors valid sort params with case-insensitive order', async () => {
+      const prisma = getPrisma();
+      await seedListReport(prisma, { url: 'https://low.example.com', overallScore: 50, grade: 'F' });
+      await seedListReport(prisma, { url: 'https://high.example.com', overallScore: 90, grade: 'A' });
+
+      const asc = await request(app).get('/api/reports?sortBy=overallScore&sortOrder=ASC');
+      expect(asc.status).toBe(200);
+      expect(asc.body.reports.map((r) => r.overallScore)).toEqual([50, 90]);
+
+      const desc = await request(app).get('/api/reports?sortBy=overallScore&sortOrder=DESC');
+      expect(desc.status).toBe(200);
+      expect(desc.body.reports.map((r) => r.overallScore)).toEqual([90, 50]);
+    });
+  });
 });

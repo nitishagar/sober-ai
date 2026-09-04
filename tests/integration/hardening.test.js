@@ -13,6 +13,8 @@
 // the env set explicitly first.
 
 const request = require('supertest');
+const app = require('../../src/api/server');
+const Auditor = require('../../src/core/auditor');
 const { truncateAll, disconnect } = require('../helpers/db');
 
 describe('Rate limit + CORS (invariant I/J)', () => {
@@ -106,5 +108,48 @@ describe('Rate limit + CORS (invariant I/J)', () => {
     // two configs behave differently and the allowlist test is non-tautological.
     const acao = res.headers['access-control-allow-origin'];
     expect([acao, '*']).toContain(acao); // accept either '*' or the echoed origin
+  });
+
+  it('legacy POST /api/audit blocks private literal targets without launching Chromium', async () => {
+    // Stub the auditor to prove no Chromium launch — the SSRF guard must fire
+    // before any Auditor work. http://127.0.0.1/ passes validation (valid http
+    // URL) so only the SSRF guard can produce the Blocked shape.
+    const auditSpy = jest.spyOn(Auditor.prototype, 'audit').mockResolvedValue({ ok: true });
+    try {
+      const res = await request(app).post('/api/audit').send({ url: 'http://127.0.0.1/' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/^Blocked:/);
+      expect(auditSpy).not.toHaveBeenCalled();
+    } finally {
+      auditSpy.mockRestore();
+    }
+  });
+
+  it('pins the shared 429 shape on legacy POST /api/audit and POST /api/batch (one budget)', async () => {
+    // Isolated registry (own limiter, own counter) so this low limit cannot
+    // poison other suites. Two counted writes on DIFFERENT routes exhaust the
+    // single shared budget — proving one limiter, not per-route counters.
+    process.env.AUDIT_RATE_LIMIT = '2';
+    let isolatedApp;
+    jest.isolateModules(() => {
+      isolatedApp = require('../../src/api/server');
+    });
+
+    try {
+      const r1 = await request(isolatedApp).post('/api/audit').send({ url: 'not-a-url' });
+      expect(r1.status).toBe(400);
+      const r2 = await request(isolatedApp).post('/api/batch').send({});
+      expect(r2.status).toBe(400);
+
+      const r3 = await request(isolatedApp).post('/api/audit').send({ url: 'not-a-url' });
+      expect(r3.status).toBe(429);
+      expect(r3.body).toEqual({ error: 'Too many audit requests, please slow down.' });
+
+      const r4 = await request(isolatedApp).post('/api/batch').send({});
+      expect(r4.status).toBe(429);
+      expect(r4.body).toEqual({ error: 'Too many audit requests, please slow down.' });
+    } finally {
+      delete process.env.AUDIT_RATE_LIMIT;
+    }
   });
 });

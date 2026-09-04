@@ -30,6 +30,14 @@ class ReportService {
   async getReports(options = {}, ownerToken = null) {
     const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc', search } = options;
 
+    // Sort allowlist with fallback-to-defaults (no 400 — S17 frozen): hostile
+    // values can never reach Prisma orderBy (which would throw → 500). Single
+    // choke point so both route + direct service callers are safe.
+    const ALLOWED_SORT_BY = ['createdAt', 'overallScore', 'url', 'grade'];
+    const safeSortBy = ALLOWED_SORT_BY.includes(sortBy) ? sortBy : 'createdAt';
+    const normalizedOrder = String(sortOrder ?? '').toLowerCase();
+    const safeSortOrder = normalizedOrder === 'asc' || normalizedOrder === 'desc' ? normalizedOrder : 'desc';
+
     const where = {};
     if (search) {
       where.url = { contains: search };
@@ -43,7 +51,7 @@ class ReportService {
     const [reports, total] = await Promise.all([
       prisma.report.findMany({
         where,
-        orderBy: { [sortBy]: sortOrder },
+        orderBy: { [safeSortBy]: safeSortOrder },
         skip: (page - 1) * limit,
         take: limit,
         select: {
@@ -51,6 +59,10 @@ class ReportService {
           url: true,
           overallScore: true,
           grade: true,
+          ssrScore: true,
+          schemaScore: true,
+          semanticScore: true,
+          contentScore: true,
           detectedIndustry: true,
           duration: true,
           createdAt: true,
@@ -96,12 +108,17 @@ class ReportService {
   }
 
   async deleteReport(reportId, ownerToken = null) {
-    // Reuse getReport so ownership is enforced (404 on mismatch, not 403).
-    await this.getReport(reportId, ownerToken);
-
-    await prisma.report.delete({
-      where: { id: reportId }
-    });
+    // Atomic owner-scoped delete (no read-then-delete TOCTOU): a cross-owner
+    // delete matches 0 rows → 'Report not found' (404, no existence leak) and
+    // the row survives. Null token → legacy global path unchanged.
+    const where = { id: reportId };
+    if (ownerToken) {
+      where.ownerToken = ownerToken;
+    }
+    const result = await prisma.report.deleteMany({ where });
+    if (result.count === 0) {
+      throw new Error('Report not found');
+    }
 
     console.log(`[Reports] Report ${reportId} deleted`);
   }
