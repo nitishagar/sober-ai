@@ -192,7 +192,8 @@ class Auditor {
           logger.error(`Failed to generate recommendations for ${auditName}:`, error);
           return [auditName, {
             error: 'Failed to generate recommendations',
-            message: error.message
+            message: error.message,
+            fallback: true
           }];
         }
       })
