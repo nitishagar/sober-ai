@@ -26,18 +26,35 @@ export default function Audit() {
   }, [location.state]);
 
   useEffect(() => {
-    fetch('/api/health')
-      .then(r => r.json())
-      .then(data => setLlmReady(data.services?.ollama === 'connected'))
-      .catch(() => setLlmReady(false));
+    // Guarded fetches: one controller for both boot fetches; abort on unmount
+    // so a late-arriving response cannot setState after unmount. AbortError is
+    // the expected cancellation path and is ignored.
+    const controller = new AbortController();
+    const { signal } = controller;
 
-    fetch('/api/reports?limit=20')
+    fetch('/api/health', { signal })
       .then(r => r.json())
       .then(data => {
+        if (signal.aborted) return;
+        setLlmReady(data.services?.ollama === 'connected');
+      })
+      .catch((err) => {
+        if (err?.name === 'AbortError' || signal.aborted) return;
+        setLlmReady(false);
+      });
+
+    fetch('/api/reports?limit=20', { signal })
+      .then(r => r.json())
+      .then(data => {
+        if (signal.aborted) return;
         const urls = [...new Set((data.reports || []).map(r => r.url))].slice(0, 5);
         setRecentUrls(urls);
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (err?.name === 'AbortError' || signal.aborted) return;
+      });
+
+    return () => controller.abort();
   }, []);
 
   const startTimer = () => {
@@ -153,7 +170,7 @@ export default function Audit() {
         setProgress('Reconnecting...');
         const reconnectResponse = await fetch(
           `/api/audit-progress/session/${sessionIdRef.current}/stream`,
-          { headers: { 'Accept': 'text/event-stream' } }
+          { headers: { 'Accept': 'text/event-stream', ...(byoAuditHeaders() || {}) } }
         );
         if (reconnectResponse.ok) {
           await processSSEStream(reconnectResponse.body.getReader(), sessionIdRef, completedRef);

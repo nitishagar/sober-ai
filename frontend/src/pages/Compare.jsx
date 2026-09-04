@@ -44,14 +44,27 @@ export default function Compare() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch(`/api/reports/compare/${id1}/${id2}`)
+    // Guarded fetch: abort on unmount / id change so a late-arriving response
+    // cannot setState after unmount. AbortError is ignored.
+    const controller = new AbortController();
+    const { signal } = controller;
+    fetch(`/api/reports/compare/${id1}/${id2}`, { signal })
       .then(res => {
         if (!res.ok) throw new Error('One or both reports not found');
         return res.json();
       })
-      .then(setData)
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
+      .then(data => {
+        if (signal.aborted) return;
+        setData(data);
+      })
+      .catch(e => {
+        if (e?.name === 'AbortError' || signal.aborted) return;
+        setError(e.message);
+      })
+      .finally(() => {
+        if (!signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
   }, [id1, id2]);
 
   if (loading) return <div className="compare-loading">Loading comparison...</div>;

@@ -28,6 +28,9 @@ export default function Reports() {
   // starts, closing both the pre-existing search/sort last-resolve-wins race and the
   // delete-vs-fetch resurrection window (invariant I-3). Holds the latest controller.
   const fetchAbortRef = useRef(null);
+  // AbortController-per-export, mirroring the list-fetch pattern: holds the
+  // latest export controller so unmount (or a second export) can cancel it.
+  const exportAbortRef = useRef(null);
 
   const fetchReports = (targetPage = page) => {
     // Cancel any prior in-flight fetch so a slow, stale .then can never overwrite a
@@ -72,8 +75,10 @@ export default function Reports() {
     fetchReports(page);
     // Abort the in-flight fetch on unmount / deps change so a late-arriving
     // response cannot setState after unmount (no setState-after-unmount).
+    // Also cancel any in-flight CSV export for the same reason.
     return () => {
       if (fetchAbortRef.current) fetchAbortRef.current.abort();
+      if (exportAbortRef.current) exportAbortRef.current.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, sortBy, sortOrder, pageSize, page]);
@@ -131,6 +136,15 @@ export default function Reports() {
   };
 
   const handleExportCsv = async () => {
+    // AbortController-per-export, mirroring the list-fetch pattern: a
+    // controller per export, AbortError ignored, no state write after abort
+    // (rapid nav during export must not crash or surface a stale error).
+    if (exportAbortRef.current) {
+      exportAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    exportAbortRef.current = controller;
+
     const params = new URLSearchParams({
       page: 1,
       limit: 10000,
@@ -138,24 +152,33 @@ export default function Reports() {
       sortOrder
     });
     if (search) params.append('search', search);
-    const res = await fetch(`/api/reports?${params}`);
-    const data = await res.json();
-    const rows = (data.reports || []).map(r => [
-      csvEscape(r.url),
-      csvEscape(r.overallScore),
-      csvEscape(r.grade),
-      csvEscape(new Date(r.createdAt).toISOString())
-    ].join(','));
-    const csv = ['URL,Score,Grade,Date', ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `reports-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const res = await fetch(`/api/reports?${params}`, { signal: controller.signal });
+      if (controller.signal.aborted) return;
+      const data = await res.json();
+      if (controller.signal.aborted) return;
+      const rows = (data.reports || []).map(r => [
+        csvEscape(r.url),
+        csvEscape(r.overallScore),
+        csvEscape(r.grade),
+        csvEscape(new Date(r.createdAt).toISOString())
+      ].join(','));
+      const csv = ['URL,Score,Grade,Date', ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reports-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      // An aborted export is the expected cancellation path — ignore it and
+      // write no state. Surface all other failures like the list fetch does.
+      if (err.name === 'AbortError' || controller.signal.aborted) return;
+      setError(err.message || 'Failed to export reports');
+    }
   };
 
   const sortIndicator = (col) => {
