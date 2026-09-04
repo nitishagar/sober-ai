@@ -11,6 +11,8 @@ process.env.DATABASE_URL = `file:${TEST_DB}`;
 process.env.OLLAMA_ENDPOINT = `http://127.0.0.1:${OLLAMA_STUB_PORT}`;
 process.env.NODE_ENV = 'test';
 process.env.PORT = String(PORT);
+// Enables webhook delivery to 127.x stub receivers; consequence — per-URL blocked branch unreachable in-harness (stays integration-level).
+process.env.SSRF_BLOCK_PRIVATE = '0';
 
 // Verify frontend/dist exists
 const distDir = path.join(__dirname, '../../../frontend/dist');
