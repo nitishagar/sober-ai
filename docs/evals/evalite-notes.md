@@ -3,7 +3,7 @@
 ## Measured
 - **Wall-clock setup time (install → first green run): ~30 min.** Install needed `--legacy-peer-deps` (npm arborist crash on this lockfile); fixture-shape discovery (gaps object, provider keys) consumed the rest.
 - **Configuration lines added:** ~12 (two scripts + .gitignore). No config file — evalite discovers `**/*.eval.ts` itself.
-- **Eval code/data lines added:** ~250 measured (modules.eval.ts ~230, 8 evals; judge.live.eval.ts ~55, skipped).
+- **Eval code/data lines added:** 342 measured (`wc -l`: modules.eval.ts 294, 9 evals; judge.live.eval.ts 48, skipped).
 - **Suite runtime:** ~20 ms (24 data cases, pure functions). Wall-clock with node startup ~2 s.
 - **Offline by default: YES** — netns-proven (`unshare -rn sh -c 'ip link set lo up && …'`); the suite imports pure modules only; the analyzer instance never connects (ctor builds the provider object without dialing).
 - **Failure message quality: good** — eval name + data case + failing scorer with score; expected/actual in the export.
@@ -29,7 +29,10 @@
 13. Health 2 (0.19.0, months between releases)
 14. Language 3 (TypeScript evals in a JS repo — esbuild transpiles, no new gate)
 
-**Weighted total (observed): 137 / 159** = Σ(score × weight) over the 14 dimensions above (weights 4,5,5,5,4,4,3,3,4,4,5,3,2,2; scale 0–3, max 159).
+**Weighted total (observed): 132 / 159** = Σ(score × weight) over the 14 dimensions above (weights 4,5,5,5,4,4,3,3,4,4,5,3,2,2; scale 0–3, max 159).
+
+## Sanctioned deviation — artifact location
+PLAN_2's `thoughts/evals/` is gitignored in this repo (local vault), so committed artifacts live at `evals/` (suite) and `docs/evals/` (docs); the auditor-tier `{error,message}` case is wire-only, covered by the promptfoo suite on `evals/trial-promptfoo` (the final evalite gate carries the analyzer tier via `llm-fallback-path`).
 
 ## Biggest risk of picking it
 In-process only: it pins module behavior (scorer, validators, factory) but never proves the HTTP API a real client calls — the Express route contract is invisible to this suite.

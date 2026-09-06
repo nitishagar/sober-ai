@@ -246,3 +246,49 @@ evalite('latency-budget', {
     },
   ],
 });
+
+evalite('llm-fallback-path', {
+  data: [
+    {
+      // The analyzer tier of the two-tier partial-failure contract: when the
+      // provider call fails (loopback endpoint that refuses connections —
+      // instant, offline), analyze() must fall back with `fallback: true`,
+      // findings-derived recommendations, and NO `error` field (auditor-tier
+      // failures carry `{error, message}` instead — asserted on the wire by
+      // the promptfoo suite on `evals/trial-promptfoo`).
+      input: {
+        auditResult: {
+          title: 'Schema Coverage',
+          score: 50,
+          severity: 'warning',
+          display_value: 'Fair - Basic schemas present, missing key types',
+          findings: [
+            { title: 'Add JSON-LD', impact: 'high', recommendation: 'Add a JSON-LD block.', message: 'No structured data found' },
+          ],
+          details: {},
+        },
+        promptKey: 'schema_coverage',
+      },
+      expected: { fallback: true, recommendationCount: 1, hasError: false },
+    },
+  ],
+  task: async (input) => {
+    const { auditResult, promptKey } = input as { auditResult: Record<string, unknown>; promptKey: string };
+    const response = (await analyzer.analyze(auditResult as never, promptKey)) as {
+      fallback?: boolean;
+      recommendations: { title: string }[];
+      error?: string;
+    };
+    return {
+      fallback: response.fallback === true,
+      recommendationCount: Array.isArray(response.recommendations) ? response.recommendations.length : 0,
+      hasError: 'error' in response,
+    };
+  },
+  scorers: [
+    {
+      name: 'analyzer-tier-fallback-flagged-not-thrown',
+      scorer: ({ output, expected }) => (expected !== undefined && JSON.stringify(output) === JSON.stringify(expected) ? 1 : 0),
+    },
+  ],
+});
