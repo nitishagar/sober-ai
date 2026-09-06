@@ -47,3 +47,8 @@ prds/
 *_MVP_COMPLETE.md
 *_STATUS_COMPLETE.md
 .aider*
+evals/evalite/.evalite/
+.evalite/
+evals/.promptfoo-cache/
+evals/.last-run.json
+evals/.spike*

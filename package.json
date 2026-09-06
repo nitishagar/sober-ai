@@ -65,7 +65,8 @@
     "local:start": "bash start-local.sh",
     "local:stop": "bash stop-local.sh",
     "local:logs": "docker-compose -f docker-compose.local.yml logs -f",
-    "local:ps": "docker-compose -f docker-compose.local.yml ps"
+    "local:ps": "docker-compose -f docker-compose.local.yml ps",
+    "test:evals:vitest": "evalite run --threshold 100"
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",
@@ -89,11 +90,13 @@
     "electron": "^40.6.1",
     "electron-builder": "^26.8.1",
     "eslint": "^8.55.0",
+    "evalite": "0.19.0",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
     "prettier": "^3.1.1",
     "prisma": "^6.16.3",
-    "supertest": "^7.2.2"
+    "supertest": "^7.2.2",
+    "vitest": "4.1.11"
   },
   "engines": {
     "node": ">=22.0.0"
