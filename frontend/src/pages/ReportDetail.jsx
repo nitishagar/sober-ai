@@ -20,8 +20,14 @@ export default function ReportDetail() {
   const [error, setError] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
   const [otherReports, setOtherReports] = useState([]);
+  // Loaded-flag (not results-length): with a single-report DB the filtered
+  // list is empty, and gating on length would refetch on every open.
+  const [pickerLoaded, setPickerLoaded] = useState(false);
 
   useEffect(() => {
+    setShowPicker(false);
+    setOtherReports([]);
+    setPickerLoaded(false);
     fetch(`/api/reports/${id}`)
       .then(res => {
         if (!res.ok) throw new Error('Report not found');
@@ -34,7 +40,8 @@ export default function ReportDetail() {
 
   const openPicker = () => {
     setShowPicker(true);
-    if (otherReports.length === 0) {
+    if (!pickerLoaded) {
+      setPickerLoaded(true);
       fetch('/api/reports?limit=50')
         .then(r => r.json())
         .then(d => setOtherReports((d.reports || []).filter(r => r.id !== id)))

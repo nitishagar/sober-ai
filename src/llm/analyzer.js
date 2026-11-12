@@ -25,9 +25,23 @@ class LLMAnalyzer {
       throw new Error(`LLM profile not found for key: ${defaultProfileKey}`);
     }
 
-    // Use provider settings if passed, otherwise fall back to config/env
+    // Use provider settings if passed, otherwise fall back to config/env.
+    // S20: the default models.yaml profile is OpenAI-compatible; the legacy
+    // qwen3-4b (ollama) profile keeps working when selected.
     if (providerSettings) {
       this.provider = ProviderFactory.create(providerSettings);
+    } else if (profile.provider === 'openai') {
+      this.provider = ProviderFactory.create({
+        provider: 'openai',
+        apiKey: process.env.OPENAI_API_KEY,
+        endpoint: process.env.OPENAI_ENDPOINT || profile.endpoint,
+        model: profile.model,
+        options: {
+          temperature: profile.temperature ?? 0.3,
+          top_p: profile.top_p ?? 0.9,
+          max_tokens: profile.max_tokens ?? 2048
+        }
+      });
     } else {
       const envEndpoint = process.env.OLLAMA_ENDPOINT;
       this.provider = ProviderFactory.create({

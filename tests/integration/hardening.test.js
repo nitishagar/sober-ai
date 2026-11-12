@@ -103,11 +103,28 @@ describe('Rate limit + CORS (invariant I/J)', () => {
 
     const anyOrigin = 'https://random.example.com';
     const res = await request(isolatedApp).get('/api/health').set('Origin', anyOrigin);
-    // Wildcard CORS reflects the requesting origin (or '*'); the key property
-    // is that the disallowed-origin test above would FAIL here — proving the
-    // two configs behave differently and the allowlist test is non-tautological.
-    const acao = res.headers['access-control-allow-origin'];
-    expect([acao, '*']).toContain(acao); // accept either '*' or the echoed origin
+    // Wildcard mode emits Access-Control-Allow-Origin: '*' (a real assertion —
+    // the old `[acao, '*']` containment was a tautology that passed even with
+    // CORS headers entirely absent).
+    expect(res.headers['access-control-allow-origin']).toBe('*');
+  });
+
+  it('answers preflight with Access-Control-Allow-Origin: * when CORS_ORIGIN is unset', async () => {
+    // The Chrome extension (cross-origin by nature) depends on this: its
+    // POST carries Content-Type + X-LLM-* headers, forcing a preflight.
+    let isolatedApp;
+    jest.isolateModules(() => {
+      isolatedApp = require('../../src/api/server');
+    });
+
+    const res = await request(isolatedApp)
+      .options('/api/audit-progress')
+      .set('Origin', 'chrome-extension://abcdefghijklmnopqrstuvwxyzabcdef')
+      .set('Access-Control-Request-Method', 'POST')
+      .set('Access-Control-Request-Headers', 'content-type,x-llm-api-key');
+
+    expect(res.status).toBe(204);
+    expect(res.headers['access-control-allow-origin']).toBe('*');
   });
 
   it('legacy POST /api/audit blocks private literal targets without launching Chromium', async () => {

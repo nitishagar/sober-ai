@@ -1,11 +1,30 @@
 version: "1.0"
 
 # Model selection
+# S20: the default AI path is an OpenAI-compatible key (OpenAI, NVIDIA NIM,
+# or any /chat/completions-compatible endpoint) — not the local backend.
 models:
-  default: qwen3-4b
+  default: gpt-4o-mini
   fallback: null  # No fallback in Phase 1
 
   profiles:
+    gpt-4o-mini:
+      provider: openai
+      endpoint: https://api.openai.com/v1  # Overridden by OPENAI_ENDPOINT or Settings
+      model: gpt-4o-mini
+      context_window: 128000
+      max_tokens: 2048
+      temperature: 0.3
+      top_p: 0.9
+      concurrent_capacity: 3-5
+      avg_response_time: "5-10s"
+      recommended: true
+      notes: |
+        OpenAI-compatible default. Works with api.openai.com and any
+        OpenAI-compatible base URL (e.g. https://integrate.api.nvidia.com/v1
+        for NVIDIA NIM). Requires an API key via OPENAI_API_KEY, Settings,
+        or a per-request BYO header; without one audits degrade to
+        finding-based fallbacks.
     qwen3-4b:
       provider: ollama
       endpoint: http://localhost:11434  # Will be overridden by env var
@@ -17,10 +36,11 @@ models:
       memory_requirement: "2.5GB"
       concurrent_capacity: 3-5
       avg_response_time: "10-15s"
-      recommended: true
+      recommended: false
       notes: |
         Qwen3 4B model. Efficient and fast with good quality.
         RAM requirement: 2.5GB. Good for website analysis and recommendations.
+        Opt-in local alternative to the OpenAI-compatible default (S20).
 
 # Performance settings
 performance:

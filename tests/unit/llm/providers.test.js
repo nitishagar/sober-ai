@@ -130,8 +130,13 @@ describe('OllamaProvider', () => {
 describe('OpenAIProvider', () => {
   beforeEach(() => jest.resetAllMocks());
 
-  it('requires an API key', () => {
-    expect(() => new OpenAIProvider()).toThrow('API key is required');
+  it('defers the missing-key failure to use-time (S20: construction is total)', async () => {
+    const provider = new OpenAIProvider();
+    expect(provider.name).toBe('openai');
+    await expect(provider.generate('test prompt')).rejects.toThrow('API key is required');
+    const result = await provider.testConnection();
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('API key is required');
   });
 
   it('defaults to gpt-4o-mini model', () => {
@@ -197,10 +202,10 @@ describe('OpenAIProvider', () => {
 });
 
 describe('ProviderFactory', () => {
-  it('creates ollama_local provider by default', () => {
+  it('creates openai provider by default', () => {
     const provider = ProviderFactory.create();
-    expect(provider).toBeInstanceOf(OllamaProvider);
-    expect(provider.name).toBe('ollama_local');
+    expect(provider).toBeInstanceOf(OpenAIProvider);
+    expect(provider.name).toBe('openai');
   });
 
   it('creates ollama_cloud provider with apiKey', () => {
@@ -232,10 +237,10 @@ describe('ProviderFactory', () => {
     expect(provider.model).toBe('claude-haiku-4-5-20251001');
   });
 
-  it('falls back to ollama_local for unknown provider', () => {
+  it('falls back to openai for unknown provider', () => {
     const provider = ProviderFactory.create({ provider: 'unknown' });
-    expect(provider).toBeInstanceOf(OllamaProvider);
-    expect(provider.name).toBe('ollama_local');
+    expect(provider).toBeInstanceOf(OpenAIProvider);
+    expect(provider.name).toBe('openai');
   });
 
   it('lists available providers', () => {
@@ -248,8 +253,13 @@ describe('ProviderFactory', () => {
 describe('AnthropicProvider', () => {
   beforeEach(() => jest.resetAllMocks());
 
-  it('requires an API key', () => {
-    expect(() => new AnthropicProvider()).toThrow('API key is required');
+  it('defers the missing-key failure to use-time (S20: construction is total)', async () => {
+    const provider = new AnthropicProvider();
+    expect(provider.name).toBe('anthropic');
+    await expect(provider.generate('test prompt')).rejects.toThrow('API key is required');
+    const result = await provider.testConnection();
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('API key is required');
   });
 
   it('defaults to claude-haiku-4-5-20251001', () => {

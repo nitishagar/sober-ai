@@ -87,7 +87,13 @@ describe('BYO-key request contract (invariant D: key isolation)', () => {
   });
 
   it('test-connection with a body key uses the body (BYO), empty body still ok via fallback', async () => {
-    // Empty body → fallback to loadProviderSettings → stub Ollama → ok:true (locked contract)
+    // Empty body → loadProviderSettings from DB. Seed ollama_local explicitly:
+    // the DB fallback must route to stored settings (locked contract) while the
+    // global default is now openai (S20) — so the stub Ollama assertion needs a
+    // stored provider, not the default.
+    await request(app)
+      .put('/api/settings')
+      .send({ llm_provider: 'ollama_local' });
     const emptyRes = await request(app)
       .post('/api/settings/test-connection')
       .send();

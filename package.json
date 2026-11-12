@@ -1,6 +1,6 @@
 {
   "name": "sober-ai-optimizer",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "AI Agent Website Optimizer - Lighthouse for the AI Age. Evaluate and optimize websites for AI agent interactions with comprehensive audits and LLM-powered recommendations.",
   "main": "src/electron/main.js",
   "author": {
@@ -40,7 +40,7 @@
     "test:integration": "jest --selectProjects integration --passWithNoTests --forceExit --runInBand",
     "test:ci": "jest --passWithNoTests --forceExit --runInBand",
     "test:watch": "jest --watch",
-    "lint": "eslint src/",
+    "lint": "eslint src/ extension/",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:install": "playwright install --with-deps chromium",
@@ -66,7 +66,9 @@
     "local:stop": "bash stop-local.sh",
     "local:logs": "docker-compose -f docker-compose.local.yml logs -f",
     "local:ps": "docker-compose -f docker-compose.local.yml ps",
-    "test:evals:vitest": "evalite run --threshold 100"
+    "test:evals:vitest": "evalite run --threshold 100",
+    "brand:icons": "node scripts/render-brand-icons.mjs",
+    "store:screenshots": "node scripts/store-screenshots.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",

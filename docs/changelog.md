@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.4.0 (2026-11-12)
+
+### Major Changes
+- **OpenAI-compatible key is the default AI path** - OpenAI, NVIDIA NIM, or any `/chat/completions` endpoint; Ollama stays opt-in; missing keys degrade to finding-based fallbacks
+- **Chrome extension (MV3)** - audit the active tab via the local backend, BYO key kept in the browser, store submission package included
+- **Brand + privacy** - Lighthouse-inspired logo and icon set, privacy policy page
+
+### New Features
+- Batch audit engine (sequential drain, status polling, webhook delivery)
+- Evalite offline evaluation gate
+- Provider-aware health endpoint and Audit readiness banner
+- Store screenshots generator (`npm run store:screenshots`)
+
+### Fixed
+- CORS wildcard default now actually emits headers (extension-grade cross-origin)
+- Backend hardening: SSRF parity, atomic delete, shared rate limiter
+- Frontend resilience: BYO reconnect headers, fetch abort hygiene
+- Lockfile re-synced; dead session map removed; picker refetch loop fixed
+
 ## v0.3.0 (2026-03-01)
 
 ### Major Changes

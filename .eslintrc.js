@@ -30,6 +30,17 @@ module.exports = {
       env: {
         browser: true
       }
+    },
+    {
+      // MV3 extension pages: browser globals plus the chrome namespace
+      files: ['extension/**/*.js'],
+      env: {
+        browser: true,
+        node: true
+      },
+      globals: {
+        chrome: 'readonly'
+      }
     }
   ]
 };

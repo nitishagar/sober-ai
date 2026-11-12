@@ -151,6 +151,6 @@ If you find it useful, a star on GitHub helps more than you'd think. Issues and 
 
 ---
 
-*SoberAI is v0.3.0. Active development — see the [Changelog](https://nitishagar.github.io/sober-ai/#/changelog) and [Roadmap](https://nitishagar.github.io/sober-ai/#/roadmap) for what's next.*
+*SoberAI is v0.4.0. Active development — see the [Changelog](https://nitishagar.github.io/sober-ai/#/changelog) and [Roadmap](https://nitishagar.github.io/sober-ai/#/roadmap) for what's next.*
 
 *[GitHub](https://github.com/nitishagar/sober-ai) | [Documentation](https://nitishagar.github.io/sober-ai) | [Issues](https://github.com/nitishagar/sober-ai/issues)*

@@ -6,9 +6,9 @@ const logger = require('../../utils/logger');
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Default settings
+// Default settings (S20: OpenAI-compatible key path is the default)
 const DEFAULTS = {
-  llm_provider: 'ollama_local',
+  llm_provider: 'openai',
   ollama_endpoint: 'http://localhost:11434',
   ollama_model: 'qwen3:4b',
   ollama_api_key: '',

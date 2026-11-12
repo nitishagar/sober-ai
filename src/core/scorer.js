@@ -24,7 +24,11 @@ class Scorer {
 
     for (const [auditName, result] of Object.entries(auditResults)) {
       const weightKey = this.getWeightKey(auditName);
-      const weight = this.weights[weightKey] || 0;
+      const configured = this.weights[weightKey];
+      if (configured === undefined) {
+        logger.warn(`No weight configured for audit '${auditName}' (key '${weightKey}'); scoring 0 for this category.`);
+      }
+      const weight = configured || 0;
       const score = result.score || 0;
 
       const weightedScore = (score * weight) / 100;

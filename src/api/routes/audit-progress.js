@@ -19,14 +19,12 @@ const activeSessions = new Map();
 
 // Cleanup old sessions every minute
 const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes
-const sessionTimestamps = new Map();
 
 setInterval(() => {
   const now = Date.now();
   for (const [sessionId, session] of activeSessions.entries()) {
     if (!session || !session.state) {
       activeSessions.delete(sessionId);
-      sessionTimestamps.delete(sessionId);
       continue;
     }
 
@@ -43,7 +41,6 @@ setInterval(() => {
 
     if (shouldDelete) {
       activeSessions.delete(sessionId);
-      sessionTimestamps.delete(sessionId);
       console.log(`[API] Cleaned up session: ${sessionId} (status: ${state.status || 'unknown'})`);
     }
   }
@@ -192,7 +189,6 @@ router.post('/', auditLimiter, async (req, res) => {
     emitter: progressEmitter,
     state: sessionState
   });
-  sessionTimestamps.set(sessionId, Date.now());
 
   const sendProgress = (data) => {
     if (data.phase !== undefined) sessionState.lastPhase = data.phase;
@@ -432,7 +428,6 @@ router.post('/', auditLimiter, async (req, res) => {
     setTimeout(() => {
       res.end();
       activeSessions.delete(sessionId);
-      sessionTimestamps.delete(sessionId);
     }, 1000);
 
   } catch (error) {
@@ -465,7 +460,6 @@ router.post('/', auditLimiter, async (req, res) => {
     setTimeout(() => {
       res.end();
       activeSessions.delete(sessionId);
-      sessionTimestamps.delete(sessionId);
     }, 1000);
   }
 });

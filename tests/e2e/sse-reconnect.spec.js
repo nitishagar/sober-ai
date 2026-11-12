@@ -30,7 +30,7 @@ test('reconnects to session stream after early close', async ({ page }) => {
 
       if (urlStr.includes('/api/health')) {
         return new Response(
-          JSON.stringify({ status: 'ok', services: { ollama: 'connected' } }),
+          JSON.stringify({ status: 'ok', services: { ollama: 'connected', llm_provider: 'openai', llm: 'configured' } }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
       }
@@ -111,7 +111,7 @@ test('reconnect request carries X-LLM-* headers when BYO mode is on', async ({ p
 
       if (urlStr.includes('/api/health')) {
         return new Response(
-          JSON.stringify({ status: 'ok', services: { ollama: 'connected' } }),
+          JSON.stringify({ status: 'ok', services: { ollama: 'connected', llm_provider: 'openai', llm: 'configured' } }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
       }

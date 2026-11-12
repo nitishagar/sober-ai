@@ -46,10 +46,26 @@ describe('Settings API', () => {
   });
 
   it('POST /api/settings/test-connection succeeds with stub Ollama', async () => {
+    // Seed ollama_local explicitly: this test pins the stub-Ollama success
+    // path, while the global default is now openai (S20).
+    await request(app)
+      .put('/api/settings')
+      .send({ llm_provider: 'ollama_local' });
     const res = await request(app)
       .post('/api/settings/test-connection')
       .send();
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
+  });
+
+  it('POST /api/settings/test-connection with no key reports ok:false (S20)', async () => {
+    // Fresh DB, no rows: openai default without a key must report failure
+    // (not throw, not silently swap providers).
+    const res = await request(app)
+      .post('/api/settings/test-connection')
+      .send();
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(false);
+    expect(res.body.message).toContain('API key');
   });
 });

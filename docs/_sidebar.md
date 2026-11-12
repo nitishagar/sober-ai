@@ -17,3 +17,4 @@
   - [Architecture](ARCHITECTURE.md)
   - [Contributing](contributing.md)
   - [Changelog](changelog.md)
+  - [Privacy Policy](privacy.md)

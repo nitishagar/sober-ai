@@ -363,7 +363,7 @@ export default function Settings() {
           to generate AI-powered recommendations for improving your website's AI-readiness.
         </p>
         <div className="settings-info">
-          <span>Version: 0.3.0</span>
+          <span>Version: 0.4.0</span>
           <span>License: MIT</span>
         </div>
       </section>

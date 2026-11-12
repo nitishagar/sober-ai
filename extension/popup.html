@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <header class="popup-header">
+      <img src="icons/icon-48.png" alt="" width="28" height="28">
+      <div>
+        <h1>SoberAI</h1>
+        <p class="subtitle">AI-agent readiness audit</p>
+      </div>
+      <span id="keyDot" class="key-dot" title="API key status"></span>
+    </header>
+
+    <div class="url-row" title="">
+      <span class="url-label">Page</span>
+      <span id="tabUrl" class="url-value">…</span>
+    </div>
+
+    <div id="unsupported" class="notice" hidden>
+      This page can't be audited (only http/https URLs). Open a website and try again.
+    </div>
+
+    <div id="noKey" class="notice" hidden>
+      No API key set — audits run with finding-based recommendations.
+      <a href="#" id="noKeyOptions">Add a key</a>
+    </div>
+
+    <button id="runBtn" class="primary">Run Audit</button>
+
+    <div id="progress" class="progress" hidden>
+      <div class="progress-top"><span id="phaseLabel">Starting…</span><span id="pct">0%</span></div>
+      <div class="bar"><div id="barFill" class="bar-fill"></div></div>
+      <div id="eta" class="eta"></div>
+    </div>
+
+    <div id="result" class="result" hidden>
+      <div class="score-row">
+        <span id="overallScore" class="overall">–</span>
+        <div>
+          <div id="grade" class="grade">–</div>
+          <div id="recNote" class="rec-note" hidden>finding-based recommendations</div>
+        </div>
+      </div>
+      <ul id="categories" class="categories"></ul>
+      <a id="openReport" href="#" class="open-report">Open full report →</a>
+    </div>
+
+    <div id="error" class="error" hidden></div>
+
+    <footer class="popup-footer">
+      <span id="backendLabel" class="backend"></span>
+      <a href="#" id="optionsLink">Settings</a>
+    </footer>
+  </div>
+  <script src="lib/audit.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

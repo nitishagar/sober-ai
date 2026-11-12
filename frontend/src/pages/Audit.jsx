@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import PhaseIndicator from '../components/PhaseIndicator';
-import { byoAuditHeaders } from '../utils/byoKey';
+import { byoAuditHeaders, isByoMode, getByoSettings } from '../utils/byoKey';
 import './Audit.css';
 
 export default function Audit() {
@@ -14,6 +14,7 @@ export default function Audit() {
   const [elapsed, setElapsed] = useState(0);
   const [eta, setEta] = useState(null);
   const [llmReady, setLlmReady] = useState(null);   // null = checking
+  const [llmInfo, setLlmInfo] = useState(null);    // { provider, status } when not ready
   const [recentUrls, setRecentUrls] = useState([]);
   const timerRef = useRef(null);
   const navigate = useNavigate();
@@ -36,11 +37,26 @@ export default function Audit() {
       .then(r => r.json())
       .then(data => {
         if (signal.aborted) return;
-        setLlmReady(data.services?.ollama === 'connected');
+        // S20: readiness keys off the configured provider. A BYO key in this
+        // browser session always counts as ready (its headers ride the audit).
+        const byo = getByoSettings();
+        if (isByoMode() && byo && byo.apiKey) {
+          setLlmReady(true);
+          setLlmInfo(null);
+          return;
+        }
+        const llm = data.services?.llm;
+        const ready = llm === 'connected' || llm === 'configured';
+        setLlmReady(ready);
+        setLlmInfo(ready ? null : {
+          provider: data.services?.llm_provider || 'openai',
+          status: llm || 'unknown'
+        });
       })
       .catch((err) => {
         if (err?.name === 'AbortError' || signal.aborted) return;
         setLlmReady(false);
+        setLlmInfo({ provider: 'openai', status: 'unknown' });
       });
 
     fetch('/api/reports?limit=20', { signal })
@@ -194,13 +210,25 @@ export default function Audit() {
     <div className="audit-page">
       {llmReady === false && (
         <div className="llm-warning">
-          <strong>Ollama not detected.</strong>{' '}
-          AI recommendations require Ollama running locally.{' '}
-          <a href="https://ollama.com/download" target="_blank" rel="noreferrer">
-            Install Ollama
-          </a>
-          {' '}then run:{' '}
-          <code>ollama pull qwen3:4b</code>
+          {llmInfo?.provider === 'ollama_local' ? (
+            <>
+              <strong>Ollama not detected.</strong>{' '}
+              AI recommendations require Ollama running locally.{' '}
+              <a href="https://ollama.com/download" target="_blank" rel="noreferrer">
+                Install Ollama
+              </a>
+              {' '}then run:{' '}
+              <code>ollama pull qwen3:4b</code>
+            </>
+          ) : (
+            <>
+              <strong>AI recommendations need an API key.</strong>{' '}
+              Add your OpenAI-compatible key in{' '}
+              <Link to="/app/settings">Settings</Link>{' '}
+              (or enable Bring Your Own Key) — without one, audits complete
+              with finding-based recommendations.
+            </>
+          )}
           <button
             className="llm-warning-dismiss"
             onClick={() => setLlmReady(true)}
@@ -211,7 +239,7 @@ export default function Audit() {
 
       <div className="audit-header">
         <h1>New Audit</h1>
-        <p className="text-secondary">Enter a URL to analyze its SEO readiness</p>
+        <p className="text-secondary">Enter a URL to analyze its AI-agent readiness</p>
       </div>
 
       <div className="card audit-form-container">

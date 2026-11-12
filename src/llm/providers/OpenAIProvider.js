@@ -5,13 +5,13 @@ const logger = require('../../utils/logger');
 class OpenAIProvider extends BaseProvider {
   constructor(config = {}) {
     super(config);
+    // S20: construction is total (openai is the default provider). A missing
+    // key fails at use-time — generate() rejects, testConnection() reports
+    // ok:false — so audits degrade to per-audit fallbacks (S5) instead of
+    // throwing at Auditor construction.
     this.apiKey = config.apiKey;
     this.endpoint = config.endpoint || 'https://api.openai.com/v1';
     this.model = config.model || 'gpt-4o-mini';
-
-    if (!this.apiKey) {
-      throw new Error('OpenAI API key is required');
-    }
   }
 
   get name() {
@@ -19,6 +19,9 @@ class OpenAIProvider extends BaseProvider {
   }
 
   async generate(prompt, onProgress = null) {
+    if (!this.apiKey) {
+      throw new Error('OpenAI API key is required');
+    }
     const payload = {
       model: this.model,
       messages: [
@@ -85,6 +88,9 @@ class OpenAIProvider extends BaseProvider {
   }
 
   async testConnection() {
+    if (!this.apiKey) {
+      return { ok: false, message: 'OpenAI API key is required' };
+    }
     try {
       const headers = {
         'Authorization': `Bearer ${this.apiKey}`,

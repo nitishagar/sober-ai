@@ -4,7 +4,16 @@ SoberAI supports multiple LLM providers for generating AI-powered audit recommen
 
 ## Providers
 
-### Ollama Local (Default)
+### OpenAI / OpenAI-compatible (Default)
+
+Uses an OpenAI-compatible API key for recommendations — `api.openai.com`,
+NVIDIA NIM (`https://integrate.api.nvidia.com/v1`), or any
+`/chat/completions`-compatible base URL set as Endpoint. Requires an API key
+(from [platform.openai.com](https://platform.openai.com/api-keys), or your
+compatible provider). Without a key, audits complete with finding-based
+fallback recommendations.
+
+### Ollama Local
 
 Runs a local LLM on your machine. Free, private, no API key required.
 
@@ -40,13 +49,12 @@ Use a remote Ollama instance with API key authentication.
 | API Key | Bearer token for authentication |
 | Model | Model name available on the server |
 
-### OpenAI
-
-Use OpenAI's API for recommendations. Requires an API key.
+### OpenAI settings reference
 
 | Setting | Default |
 |---------|---------|
 | API Key | Required (from [platform.openai.com](https://platform.openai.com/api-keys)) |
+| Endpoint | `https://api.openai.com/v1` (use `https://integrate.api.nvidia.com/v1` for NVIDIA NIM) |
 | Model | `gpt-4o-mini` |
 
 **Other supported models:** `gpt-4o`, `gpt-4-turbo`, `gpt-3.5-turbo`

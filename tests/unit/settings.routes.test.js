@@ -34,7 +34,7 @@ describe('Settings API routes', () => {
       const res = await request(app).get('/api/settings');
 
       expect(res.status).toBe(200);
-      expect(res.body.llm_provider).toBe('ollama_local');
+      expect(res.body.llm_provider).toBe('openai');
       expect(res.body.ollama_endpoint).toBe('http://localhost:11434');
       expect(res.body.ollama_model).toBe('qwen3:4b');
     });

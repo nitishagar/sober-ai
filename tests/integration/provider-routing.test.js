@@ -10,13 +10,13 @@ describe('Settings → Provider Routing', () => {
   beforeEach(truncateAll);
   afterAll(disconnect);
 
-  it('default settings (no DB rows) create ollama_local provider', async () => {
+  it('default settings (no DB rows) create openai provider', async () => {
     const settings = await loadProviderSettings();
-    expect(settings.provider).toBe('ollama_local');
+    expect(settings.provider).toBe('openai');
 
     const provider = ProviderFactory.create(settings);
-    expect(provider).toBeInstanceOf(OllamaProvider);
-    expect(provider.name).toBe('ollama_local');
+    expect(provider).toBeInstanceOf(OpenAIProvider);
+    expect(provider.name).toBe('openai');
   });
 
   it('PUT llm_provider=openai + openai_api_key → ProviderFactory returns OpenAIProvider', async () => {

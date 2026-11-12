@@ -1,7 +1,9 @@
 /**
  * Tier 2: Full pipeline integration test.
  * Real: Auditor, 4 audit classes, Scorer, ReportService (SQLite)
- * Stubbed: runGatherers (canned HTML data), Ollama LLM (via HTTP stub on port 11435)
+ * Stubbed: runGatherers (canned HTML data). LLM resolves via the default
+ * provider chain (S20, keyless in this env) → per-audit fallbacks; the Ollama
+ * HTTP stub on port 11435 is not on this file's path.
  */
 
 const yaml = require('js-yaml');

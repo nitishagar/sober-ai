@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SoberAI Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="options">
+    <h1>SoberAI Settings</h1>
+    <p class="hint">Your key stays in this browser (<code>chrome.storage.local</code>) and is sent
+      only to your SoberAI backend, per audit. It is never saved server-side.</p>
+
+    <div class="field">
+      <label for="backendUrl">Backend URL</label>
+      <input id="backendUrl" type="text" placeholder="http://localhost:3000">
+      <div class="hint">The SoberAI server (local default). Non-local backends need a one-time origin grant below.</div>
+    </div>
+
+    <div class="field" id="grantRow" hidden>
+      <button id="grantBtn">Grant access to this backend origin</button>
+      <div class="hint" id="grantHint"></div>
+    </div>
+
+    <div class="field">
+      <label for="provider">LLM provider</label>
+      <select id="provider">
+        <option value="openai">OpenAI / OpenAI-compatible</option>
+        <option value="anthropic">Anthropic (Claude)</option>
+        <option value="ollama_cloud">Ollama (Cloud)</option>
+        <option value="ollama_local">Ollama (Local)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="apiKey">API key</label>
+      <input id="apiKey" type="password" placeholder="sk-… (kept in this browser only)" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label for="endpoint">Endpoint (optional)</label>
+      <input id="endpoint" type="text" placeholder="https://api.openai.com/v1">
+      <div class="hint">Use <code>https://integrate.api.nvidia.com/v1</code> for NVIDIA NIM. Empty means the provider default.</div>
+    </div>
+
+    <div class="field">
+      <label for="model">Model (optional)</label>
+      <input id="model" type="text" placeholder="gpt-4o-mini">
+    </div>
+
+    <div class="row">
+      <button id="saveBtn" class="primary">Save</button>
+      <button id="testBtn">Test connection</button>
+      <button id="clearBtn">Clear key</button>
+    </div>
+    <div id="message" class="test-result" hidden></div>
+  </div>
+  <script src="lib/audit.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

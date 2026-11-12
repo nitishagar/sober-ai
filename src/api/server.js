@@ -63,7 +63,11 @@ const loadConfig = () => {
 const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
   : undefined;
-app.use(cors({ origin: corsOrigins }));
+// NOTE: cors() with NO options object is the wildcard; passing
+// { origin: undefined } would disable CORS headers entirely (the cors
+// package treats an explicitly-undefined origin as "no callback, next()").
+// The extension (cross-origin by nature) depends on the wildcard default.
+app.use(corsOrigins ? cors({ origin: corsOrigins }) : cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -94,16 +98,35 @@ app.use((req, res, next) => {
 // Mounted before routes so req.ownerToken is available everywhere.
 app.use(ownerTokenMiddleware);
 
-// Health check endpoint — performs a real Ollama ping with 10s result cache
+// Health check endpoint — performs a real Ollama ping with 10s result cache.
+// S20: also reports the configured LLM provider plus a cheap readiness signal.
+// Key-based providers report key presence ('configured' vs 'not_configured')
+// with NO network ping — health must never block (S14) nor burn API calls.
+// `services.ollama` is kept for backward compatibility.
 app.get('/api/health', async (req, res) => {
   const ollamaStatus = await checkOllama();
+  let llmProvider = 'openai';
+  let llmStatus = 'not_configured';
+  try {
+    const providerSettings = await settingsRouter.loadProviderSettings();
+    llmProvider = providerSettings.provider || 'openai';
+    if (llmProvider === 'ollama_local') {
+      llmStatus = ollamaStatus === 'connected' ? 'connected' : 'unreachable';
+    } else {
+      llmStatus = providerSettings.apiKey ? 'configured' : 'not_configured';
+    }
+  } catch (_) {
+    // Settings DB unavailable: keep openai/not_configured defaults, still 200.
+  }
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '0.3.0',
+    version: '0.4.0',
     services: {
       database: process.env.DATABASE_URL ? 'connected' : 'not configured',
-      ollama: ollamaStatus
+      ollama: ollamaStatus,
+      llm_provider: llmProvider,
+      llm: llmStatus
     }
   });
 });

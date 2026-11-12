@@ -9,10 +9,8 @@ class AnthropicProvider extends BaseProvider {
     this.endpoint = config.endpoint || 'https://api.anthropic.com/v1';
     this.model = config.model || 'claude-haiku-4-5-20251001';
     this.anthropicVersion = config.anthropicVersion || '2023-06-01';
-
-    if (!this.apiKey) {
-      throw new Error('Anthropic API key is required');
-    }
+    // S20: construction is total — a missing key fails at use-time (see
+    // OpenAIProvider) so audits degrade to per-audit fallbacks (S5).
   }
 
   get name() {
@@ -28,6 +26,9 @@ class AnthropicProvider extends BaseProvider {
   }
 
   async generate(prompt, onProgress = null) {
+    if (!this.apiKey) {
+      throw new Error('Anthropic API key is required');
+    }
     const payload = {
       model: this.model,
       max_tokens: this.maxTokens,
@@ -78,6 +79,9 @@ class AnthropicProvider extends BaseProvider {
   }
 
   async testConnection() {
+    if (!this.apiKey) {
+      return { ok: false, message: 'Anthropic API key is required' };
+    }
     try {
       await axios.post(
         `${this.endpoint}/messages`,

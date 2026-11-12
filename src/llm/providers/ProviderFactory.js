@@ -7,7 +7,7 @@ class ProviderFactory {
   /**
    * Create a provider based on settings.
    * @param {Object} settings - Provider settings
-   * @param {string} settings.provider - 'ollama_local', 'ollama_cloud', or 'openai'
+   * @param {string} settings.provider - 'openai' (default), 'ollama_local', 'ollama_cloud', or 'anthropic'
    * @param {string} [settings.endpoint] - Provider endpoint URL
    * @param {string} [settings.apiKey] - API key (for cloud providers)
    * @param {string} [settings.model] - Model name
@@ -15,7 +15,8 @@ class ProviderFactory {
    * @returns {BaseProvider}
    */
   static create(settings = {}) {
-    const provider = settings.provider || 'ollama_local';
+    // S20: the OpenAI-compatible key path is the default for all AI functionality.
+    const provider = settings.provider || 'openai';
 
     switch (provider) {
       case 'ollama_local':
@@ -50,10 +51,11 @@ class ProviderFactory {
         });
 
       default:
-        logger.warn(`Unknown provider '${provider}', falling back to ollama_local`);
-        return new OllamaProvider({
-          endpoint: process.env.OLLAMA_ENDPOINT || 'http://localhost:11434',
-          model: 'qwen3:4b',
+        logger.warn(`Unknown provider '${provider}', falling back to openai`);
+        return new OpenAIProvider({
+          apiKey: settings.apiKey || process.env.OPENAI_API_KEY,
+          endpoint: settings.endpoint || process.env.OPENAI_ENDPOINT,
+          model: settings.model || 'gpt-4o-mini',
           ...settings.options
         });
     }

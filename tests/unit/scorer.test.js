@@ -1,4 +1,5 @@
 const Scorer = require('../../src/core/scorer');
+const logger = require('../../src/utils/logger');
 
 describe('Scorer', () => {
   describe('Weight validation', () => {
@@ -55,6 +56,26 @@ describe('Scorer', () => {
       // Expected: (100*25 + 80*25 + 90*25 + 70*25) / 100 = 85
       expect(result.overall).toBe(85);
       expect(result.grade).toBe('B');
+    });
+
+    it('should warn and score 0 when a category weight is missing', () => {
+      const warnSpy = jest.spyOn(logger, 'warn').mockImplementation(() => {});
+      try {
+        const scorer = new Scorer({ ssr_readiness: 100 });
+
+        const result = scorer.calculate({
+          ssrReadiness: { score: 80, severity: 'pass' },
+          schemaCoverage: { score: 90, severity: 'pass' }
+        });
+
+        expect(result.categories.schemaCoverage.weight).toBe(0);
+        expect(result.overall).toBe(80);
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('schema_coverage')
+        );
+      } finally {
+        warnSpy.mockRestore();
+      }
     });
 
     it('should handle zero scores', () => {

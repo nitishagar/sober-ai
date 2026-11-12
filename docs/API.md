@@ -1,6 +1,6 @@
 # API Reference
 
-Version: 0.3.0
+Version: 0.4.0
 Base URL: `http://localhost:3000`
 
 ## Audit Endpoints
@@ -291,7 +291,7 @@ Tests the currently configured LLM provider.
 {
   "status": "ok",
   "timestamp": "2026-03-01T...",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "services": {
     "database": "connected",
     "ollama": "connected"
@@ -322,6 +322,18 @@ variants, exactly as returned:
   `500 { "error": "Failed to get stats" }`.
 - Batch creation failure: `500 { "error": "Internal Server Error", "message": "Failed to create batch job" }`.
 - Unknown `/api/*` path: `404 { "error": "API endpoint not found" }`.
+
+## Chrome Extension (CORS)
+
+The MV3 extension (`extension/`) audits the active tab through this API over
+`POST /api/audit-progress` with the BYO `X-LLM-*` headers (see
+`extension/README.md`). Its fetches carry no cookies. Default (unset
+`CORS_ORIGIN`) wildcard CORS covers it; locked-down deploys must allowlist
+the extension origin explicitly:
+
+```bash
+CORS_ORIGIN=chrome-extension://<extension-id>
+```
 
 ## Rate Limiting
 

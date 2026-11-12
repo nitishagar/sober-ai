@@ -1,7 +1,7 @@
 {
   "name": "sober-ai-frontend",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Frontend application for Sober AI - AI Agent Website Optimizer",
   "type": "module",
   "author": {

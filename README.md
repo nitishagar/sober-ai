@@ -4,7 +4,7 @@
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen.svg)](https://nodejs.org/)
 [![GitHub Issues](https://img.shields.io/github/issues/nitishagar/sober-ai)](https://github.com/nitishagar/sober-ai/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/nitishagar/sober-ai)](https://github.com/nitishagar/sober-ai/stargazers)
-[![Version](https://img.shields.io/badge/version-0.3.0-orange.svg)](https://github.com/nitishagar/sober-ai/releases)
+[![Version](https://img.shields.io/badge/version-0.4.0-orange.svg)](https://github.com/nitishagar/sober-ai/releases)
 [![CI](https://github.com/nitishagar/sober-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/nitishagar/sober-ai/actions/workflows/ci.yml)
 
 ![sober-ai(2)](https://github.com/user-attachments/assets/ae07e349-880c-49fe-812b-8f1063abf593)
@@ -25,7 +25,7 @@ With 1 billion+ monthly AI crawler requests (GPTBot, ClaudeBot, PerplexityBot), 
 | Content Extractability | 20% | Text readability and accessibility for LLMs |
 | Machine Readability | 20% | AI crawler access (robots.txt, llms.txt, sitemap, OpenGraph) |
 
-AI-powered recommendations are generated using your choice of LLM provider (Ollama, OpenAI, or Anthropic; NVIDIA NIM also works via the OpenAI-compatible bring-your-own-key endpoint).
+AI-powered recommendations default to an OpenAI-compatible key (OpenAI, NVIDIA NIM, or any `/chat/completions` endpoint, including bring-your-own-key mode that never stores the key server-side). Ollama local/cloud and Anthropic stay available as opt-ins. Without any key, audits complete with finding-based recommendations.
 
 ## Quick Start
 
@@ -50,7 +50,7 @@ npx prisma migrate deploy --schema=src/db/schema.prisma
 
 # Start the server
 node src/api/server.js
-# Open http://localhost:3000
+# Open http://localhost:3000/app
 ```
 
 ### Option 3: Electron Development
@@ -59,15 +59,24 @@ node src/api/server.js
 npm run electron:dev
 ```
 
+### Option 4: Chrome Extension
+
+Start the backend (Option 2), then load `extension/` unpacked at
+`chrome://extensions` (Developer mode). Audit the active tab from the
+popup; keys stay in `chrome.storage.local`. See
+[`extension/README.md`](extension/README.md).
+
 ### LLM Setup (Optional)
 
-For AI-powered recommendations, install [Ollama](https://ollama.com) and pull a model:
+Set an OpenAI-compatible key — environment, Settings page, or
+bring-your-own-key mode:
 
 ```bash
-ollama pull qwen3:4b
+export OPENAI_API_KEY=sk-...
 ```
 
-Or configure OpenAI or Anthropic in Settings with your API key.
+Or go fully local: install [Ollama](https://ollama.com), run
+`ollama pull qwen3:4b`, and select `ollama_local` in Settings.
 
 ## Usage
 
@@ -86,7 +95,7 @@ Electron Shell
 ├── Express.js Backend (in-process)
 ├── SQLite Database (Prisma ORM)
 ├── Playwright (browser automation)
-└── LLM Provider (Ollama local/cloud, OpenAI, or Anthropic)
+└── LLM Provider (OpenAI-compatible default; Ollama local/cloud or Anthropic opt-in)
 ```
 
 ### Key Technologies
@@ -96,7 +105,8 @@ Electron Shell
 - **Frontend**: React + Vite
 - **Database**: SQLite via Prisma
 - **Browser**: Playwright
-- **LLM**: Ollama (local/cloud), OpenAI, or Anthropic
+- **LLM**: OpenAI-compatible default (OpenAI, NVIDIA NIM, self-hosted gateways); Ollama or Anthropic opt-in
+- **Extension**: Chrome MV3 tab audit (no build step)
 
 ## Testing
 
@@ -148,4 +158,4 @@ Copyright 2025-2026 Nitish Agarwal
 
 ---
 
-**Version 0.3.0** | [Changelog](https://nitishagar.github.io/sober-ai/#/changelog)
+**Version 0.4.0** | [Changelog](https://nitishagar.github.io/sober-ai/#/changelog)

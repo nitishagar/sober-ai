@@ -77,7 +77,12 @@ describe('LLMAnalyzer', () => {
       }
     });
 
-    const analyzer = new LLMAnalyzer();
+    // Explicit Ollama transport: this test pins analyzer behavior, not the default provider.
+    const analyzer = new LLMAnalyzer(null, {
+      provider: 'ollama_local',
+      endpoint: 'http://localhost:11434',
+      model: 'qwen3:4b'
+    });
     const result = await analyzer.analyze(auditResult, 'semantic_improvements');
 
     expect(result.summary).toBe(payload.summary);
@@ -105,7 +110,12 @@ describe('LLMAnalyzer', () => {
     const emitter = new EventEmitter();
     axios.post.mockResolvedValue({ data: emitter });
 
-    const analyzer = new LLMAnalyzer();
+    // Explicit Ollama transport: this test pins streaming aggregation, not the default provider.
+    const analyzer = new LLMAnalyzer(null, {
+      provider: 'ollama_local',
+      endpoint: 'http://localhost:11434',
+      model: 'qwen3:4b'
+    });
     const onProgress = jest.fn();
 
     const analyzePromise = analyzer.analyze(auditResult, 'ssr_analysis', onProgress);
@@ -155,18 +165,22 @@ describe('LLMAnalyzer', () => {
   it('uses config from models.yaml when no provider settings given', () => {
     const analyzer = new LLMAnalyzer();
     expect(analyzer.provider).toBeDefined();
-    expect(analyzer.provider.model).toBe('qwen3:4b');
+    expect(analyzer.provider.name).toBe('openai');
+    expect(analyzer.provider.model).toBe('gpt-4o-mini');
   });
 
   it('falls back to audit findings when LLM fails', async () => {
     axios.post.mockRejectedValue(new Error('Connection refused'));
 
+    // Default path (S20): no key → use-time rejection → fallback:true, no throw.
+    delete process.env.OPENAI_API_KEY;
     const analyzer = new LLMAnalyzer();
     const result = await analyzer.analyze(auditResult, 'content_optimization');
 
     expect(result.fallback).toBe(true);
     expect(result.recommendations).toHaveLength(auditResult.findings.length);
     expect(result.summary).toContain('Failed to retrieve AI recommendations');
+    expect(result.summary).toContain('API key');
   });
 
   // Invariant F (IMPLICIT_SPEC F / PLAN:65,305): a 429 from the provider — i.e.
@@ -190,7 +204,13 @@ describe('LLMAnalyzer', () => {
     );
     axios.post.mockRejectedValue(rateLimitError);
 
-    const analyzer = new LLMAnalyzer();
+    // Explicit Ollama transport so the mocked 429 (not a missing-key
+    // rejection) is what the analyzer degrades.
+    const analyzer = new LLMAnalyzer(null, {
+      provider: 'ollama_local',
+      endpoint: 'http://localhost:11434',
+      model: 'qwen3:4b'
+    });
     const result = await analyzer.analyze(auditResult, 'content_optimization');
 
     // The 429 must be swallowed and turned into a fallback, not propagated.
