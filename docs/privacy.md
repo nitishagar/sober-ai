@@ -35,4 +35,5 @@ your data in the default setup. The software is open source — verify at
 
 ## Contact
 
-Open an issue at <https://github.com/nitishagar/sober-ai/issues>.
+Email [hello@applair.in](mailto:hello@applair.in), or open an issue at
+<https://github.com/nitishagar/sober-ai/issues>.
